@@ -21,7 +21,7 @@ impl File {
 }
 
 impl Transport for File {
-    fn send(&mut self, data: &crate::Message) {
+    fn send(&mut self, data: &Message) {
         if self.formatted {
             writeln!(self.file, "{}: {}", data.name, data.data).unwrap();
         } else {

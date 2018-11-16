@@ -1,3 +1,6 @@
+use crate::prelude::Message;
+use crate::{make_timestamp, Queue};
+
 mod socket;
 pub use self::socket::Socket;
 
@@ -11,5 +14,5 @@ pub enum Error {
 }
 
 pub trait Transport: Send {
-    fn send(&mut self, data: &crate::Message);
+    fn send(&mut self, data: &Message);
 }

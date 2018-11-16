@@ -1,4 +1,4 @@
-use {super::*, crate::*};
+use super::*;
 
 use std::io;
 use std::io::prelude::*;
@@ -9,8 +9,8 @@ use crossbeam_channel as channel;
 
 #[derive(Debug)]
 pub struct Socket {
-    tx: channel::Sender<crate::Message>,
-    rx: channel::Receiver<crate::Message>,
+    tx: channel::Sender<Message>,
+    rx: channel::Receiver<Message>,
     max: usize,
 }
 
@@ -21,7 +21,7 @@ impl Socket {
         Self { tx, rx, max }
     }
 
-    fn run_loop(rx: channel::Receiver<crate::Message>, addr: &str, size: usize) {
+    fn run_loop(rx: channel::Receiver<Message>, addr: &str, size: usize) {
         #[derive(Debug)]
         struct Client {
             id: u8,
@@ -93,7 +93,7 @@ impl Socket {
 }
 
 impl Transport for Socket {
-    fn send(&mut self, data: &crate::Message) {
+    fn send(&mut self, data: &Message) {
         if self.rx.is_full() {
             self.rx.recv().unwrap(); // TODO handle this
         }

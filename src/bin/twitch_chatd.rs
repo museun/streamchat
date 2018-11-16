@@ -1,7 +1,7 @@
 #![feature(slice_patterns)]
 
+use twitch_chat::prelude::*;
 use twitch_chat::transports::{Socket, Transport};
-use twitch_chat::{Args, Badge, Color, Emote, Message};
 
 use std::collections::HashMap;
 use std::env;

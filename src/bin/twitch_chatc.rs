@@ -1,5 +1,4 @@
-use twitch_chat::Args;
-use twitch_chat::Message;
+use twitch_chat::prelude::*;
 
 use std::io::prelude::*;
 use std::io::BufReader;
