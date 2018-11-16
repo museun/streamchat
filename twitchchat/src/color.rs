@@ -17,6 +17,7 @@ impl Default for Color {
 
 impl Color {
     pub fn parse(s: &str) -> Color {
+        // sanity check
         if s.len() != 7 || (s.len() == 7 && !s.starts_with('#')) {
             return Self::default();
         }

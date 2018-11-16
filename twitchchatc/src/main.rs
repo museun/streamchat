@@ -1,4 +1,4 @@
-use twitch_chat::prelude::*;
+use twitchchat::prelude::*;
 
 use std::io::prelude::*;
 use std::io::BufReader;

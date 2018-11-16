@@ -1,6 +1,6 @@
 #![feature(slice_patterns)]
-use twitch_chat::prelude::*;
-use twitch_chat::transports::{Socket, Transport};
+use twitchchat::prelude::*;
+use twitchchat::transports::{Socket, Transport};
 
 use std::collections::HashMap;
 use std::env;
@@ -250,7 +250,7 @@ impl<'a> IrcMessage<'a> {
 
             let msg = Message {
                 userid: self.tags.get("user-id")?.to_string(),
-                timestamp: twitch_chat::make_timestamp(),
+                timestamp: twitchchat::make_timestamp(),
                 name: self.tags.get("display-name")?.to_string(),
                 data: data.to_string(),
                 badges: self.tags.badges().unwrap_or_default(),

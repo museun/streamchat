@@ -9,14 +9,16 @@ pub struct Emote {
 impl Emote {
     pub fn parse<S: AsRef<str>>(s: S) -> Vec<Self> {
         let mut emotes = vec![];
-        for emote in s.as_ref().split_terminator('/') {
-            if let Some((head, tail)) = Self::get_parts(emote, ':') {
-                if let Some(ranges) = Self::get_ranges(&tail) {
-                    emotes.push(Emote {
-                        id: head.parse::<usize>().expect("valid kappa"),
-                        ranges,
-                    })
-                }
+        for (head, tail) in s
+            .as_ref()
+            .split_terminator('/')
+            .filter_map(|s| Self::get_parts(s, ':'))
+        {
+            if let Some(ranges) = Self::get_ranges(&tail) {
+                emotes.push(Emote {
+                    id: head.parse::<usize>().expect("valid kappa"),
+                    ranges,
+                })
             }
         }
         emotes
