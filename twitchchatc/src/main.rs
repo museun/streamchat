@@ -7,14 +7,13 @@ use std::net::TcpStream;
 
 use termcolor::{BufferWriter, ColorChoice};
 
-mod options;
-use self::options::Options;
-
-mod error;
-use self::error::Error;
-
 mod buffer;
+mod error;
+mod options;
+
 use self::buffer::Buffer;
+use self::error::Error;
+use self::options::Options;
 
 fn main() {
     let opts = Options::parse(&env::args().collect::<Vec<_>>());
