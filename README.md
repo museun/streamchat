@@ -43,7 +43,7 @@ flag | description
 ```json
 {
     "userid": "23196011",
-    "timestamp": 1542340383311,
+    "timestamp": "1542340383311",
     "name": "museun",
     "data": "Kappa Kappa VoHiYo",
     "color": {
