@@ -18,6 +18,8 @@ pub struct Options {
     pub limit: usize,
     pub channel: String,
     pub nick: String,
+    pub use_colors: bool,
+    pub log_level: Level,
 }
 
 impl Options {
@@ -60,6 +62,43 @@ impl Options {
             limit,
             channel,
             nick,
+            log_level: Level::from_env(),
+            use_colors: env::var("NO_COLOR").is_err(),
+        }
+    }
+}
+
+#[derive(PartialEq)]
+pub enum Level {
+    Off,
+    Trace,
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+impl Default for Level {
+    fn default() -> Self {
+        Level::Info
+    }
+}
+
+impl Level {
+    pub fn from_env() -> Self {
+        let e = match std::env::var("TWITCH_CHAT_LEVEL") {
+            Err(..) => return Self::default(),
+            Ok(s) => s,
+        };
+
+        match e.as_str() {
+            "off" | "OFF" => Level::Off,
+            "trace" | "TRACE" => Level::Trace,
+            "debug" | "DEBUG" => Level::Debug,
+            "info" | "INFO" => Level::Info,
+            "warn" | "WARN" => Level::Warn,
+            "error" | "ERROR" => Level::Error,
+            _ => Level::default(),
         }
     }
 }
