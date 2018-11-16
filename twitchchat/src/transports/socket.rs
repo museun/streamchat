@@ -1,7 +1,6 @@
 use super::*;
 
-use std::io;
-use std::io::prelude::*;
+use std::io::{self, prelude::*};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::thread;
 
@@ -17,12 +16,12 @@ pub struct Socket {
 impl Socket {
     pub fn start(addr: &str, max: usize) -> Self {
         let (tx, rx) = channel::bounded(max);
+        trace!("starting run loop, max of {} on {}", max, addr);
         Self::run_loop(rx.clone(), addr, max);
         Self { tx, rx, max }
     }
 
     fn run_loop(rx: channel::Receiver<Message>, addr: &str, size: usize) {
-        #[derive(Debug)]
         struct Client {
             id: u8,
             last: u64,
@@ -34,24 +33,31 @@ impl Socket {
             .set_nonblocking(true)
             .expect("nonblocking mode must be set");
 
+        debug!(
+            "socket transport listening on: {}",
+            listener.local_addr().unwrap()
+        );
+
         thread::spawn(move || {
             let mut queue = Queue::new(size);
             let (mut clients, mut alive) = (vec![], vec![]);
 
+            debug!("starting run loop");
             loop {
                 'accept: loop {
                     match listener.accept() {
-                        Ok((stream, _addr)) => {
+                        Ok((stream, addr)) => {
                             let client = Client {
                                 id: clients.len() as u8,
                                 last: 0,
                                 stream,
                             };
+                            trace!("accepted client from: {}", addr);
                             clients.push(client);
                             break 'accept;
                         }
                         Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {}
-                        Err(err) => eprintln!("error accepting client: {}", err),
+                        Err(err) => warn!("error accepting client: {}", err),
                     }
 
                     if let Ok(msg) = rx.try_recv() {
@@ -76,12 +82,14 @@ impl Socket {
                         .map(|(_, m)| m)
                     {
                         if let Err(_err) = client.stream.write_all(msg.as_bytes()) {
+                            debug!("client appears to be disconnected: {}", client.id);
                             let _ = client.stream.shutdown(Shutdown::Both);
                             continue 'drain;
                         }
                     }
 
                     if let Err(_err) = client.stream.flush() {
+                        debug!("client appears to be disconnected: {}", client.id);
                         let _ = client.stream.shutdown(Shutdown::Both);
                         continue 'drain;
                     }
@@ -90,6 +98,7 @@ impl Socket {
                     alive.push(client)
                 }
 
+                trace!("new client list count: {}", alive.len());
                 std::mem::swap(&mut clients, &mut alive);
                 clients.shrink_to_fit();
             }
@@ -100,6 +109,7 @@ impl Socket {
 impl Transport for Socket {
     fn send(&mut self, data: &Message) {
         if self.rx.is_full() {
+            trace!("buffer full, dropping one");
             self.rx.recv().unwrap(); // TODO handle this
         }
         // expensive..

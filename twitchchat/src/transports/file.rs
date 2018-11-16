@@ -13,6 +13,11 @@ pub struct File {
 
 impl File {
     pub fn create(name: impl AsRef<Path>, formatted: bool) -> Self {
+        trace!(
+            "created file (formatted={}) transport for: {}",
+            formatted,
+            name.as_ref().to_string_lossy()
+        );
         Self {
             formatted,
             file: BufWriter::new(RFile::create(name).unwrap()),

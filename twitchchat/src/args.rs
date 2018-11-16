@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
+// TODO borrow the strings
 pub struct Args(pub HashMap<String, String>);
+
 impl Args {
     pub fn parse(args: &[String]) -> Option<Self> {
         let mut map = HashMap::new();

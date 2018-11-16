@@ -19,6 +19,7 @@ impl Color {
     pub fn parse(s: &str) -> Color {
         // sanity check
         if s.len() != 7 || (s.len() == 7 && !s.starts_with('#')) {
+            trace!("invalid color '{}' defaulting", s);
             return Self::default();
         }
         if let Ok(s) = u32::from_str_radix(&s[1..], 16) {
@@ -28,6 +29,7 @@ impl Color {
                 b: (s & 0xFF) as u8,
             }
         } else {
+            trace!("could not parse color '{}' defaulting", s);
             Self::default()
         }
     }
