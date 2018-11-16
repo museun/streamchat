@@ -31,7 +31,7 @@ fn main() {
     let token = match env::var("TWITCH_CHAT_OAUTH_TOKEN") {
         Ok(token) => token,
         Err(..) => {
-            eprintln!("TWITCH_CHAT_OAUTH_TOKEN must be set");
+            eprintln!("TWITCH_CHAT_OAUTH_TOKEN must be set to oauth:token");
             std::process::exit(1);
         }
     };

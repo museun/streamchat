@@ -6,7 +6,7 @@ use std::io::{self, BufReader, Stdin};
 const USAGE: &str = r#" 
   -n int            number of messages to buffer
   -m fd             mock stream for testing clients (file.txt | stdin | -)
-  -a addr:port      address to connect too
+  -a addr:port      address to host on
   -c string         channel to join
   -n string         nick to use (required)
 "#;

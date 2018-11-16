@@ -90,7 +90,6 @@ impl<'a> IrcMessage<'a> {
                 },
                 is_action,
             };
-            eprintln!("!! {:?}", msg);
             return Some(msg);
         }
 

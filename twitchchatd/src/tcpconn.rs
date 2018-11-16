@@ -25,7 +25,7 @@ impl TcpConn {
         let writer = BufWriter::new(maybe!(conn.try_clone()));
 
         let pass = format!("PASS {}", &token);
-        let nick = format!("NICK #{}", &nick);
+        let nick = format!("NICK {}", &nick);
         let join = format!("JOIN #{}", &channel);
 
         let mut this = Self { reader, writer };

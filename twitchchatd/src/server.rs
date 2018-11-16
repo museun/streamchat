@@ -12,7 +12,6 @@ impl Server {
 
     pub fn run(&mut self) {
         while let Some(maybe) = self.conn.try_read() {
-            eprintln!(">> {:?}", maybe);
             if self.handle(&maybe).is_none() {
                 break;
             }
@@ -23,7 +22,6 @@ impl Server {
         match maybe {
             Maybe::Just(data) => {
                 let msg = IrcMessage::parse(&data)?;
-                eprintln!("msg: {:?}", msg);
                 match msg.command {
                     Command::Ping { data } => {
                         self.conn.write(&format!("PING {}", data)).ok()?;
