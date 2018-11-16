@@ -1,6 +1,6 @@
 #![feature(slice_patterns)]
 use twitchchat::prelude::*;
-use twitchchat::transports::{Socket, Transport};
+use twitchchat::transports::{File, Socket, Transport};
 
 use std::env;
 use std::io::BufRead;
@@ -57,6 +57,8 @@ fn main() {
         },
         vec![
             Box::new(Socket::start(&options.addr, options.limit)), //
+            Box::new(File::create("out.txt", true)),
+            Box::new(File::create("out.json", false)),
         ],
     );
 

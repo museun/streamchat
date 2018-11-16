@@ -58,8 +58,8 @@ impl<'a> IrcMessage<'a> {
             "PING" => Command::Ping {
                 data: get_data(&input),
             },
-            e => Command::Unknown {
-                cmd: e,
+            cmd => Command::Unknown {
+                cmd,
                 args,
                 data: get_data(&input),
             },
@@ -78,7 +78,7 @@ impl<'a> IrcMessage<'a> {
 
             let msg = Message {
                 userid: self.tags.get("user-id")?.to_string(),
-                timestamp: twitchchat::make_timestamp(),
+                timestamp: twitchchat::make_timestamp().to_string(),
                 name: self.tags.get("display-name")?.to_string(),
                 data: data.to_string(),
                 badges: self.tags.badges().unwrap_or_default(),

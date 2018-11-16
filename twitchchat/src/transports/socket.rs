@@ -55,7 +55,7 @@ impl Socket {
                     }
 
                     if let Ok(msg) = rx.try_recv() {
-                        let ts = msg.timestamp;
+                        let ts = msg.timestamp.clone();
                         let msg = serde_json::to_string(&msg).expect("valid json") + "\n";
                         queue.push((ts, msg));
                         break 'accept;
@@ -69,7 +69,12 @@ impl Socket {
                 'drain: for client in clients.drain(..) {
                     let mut client = client;
                     let last = client.last;
-                    for msg in queue.iter().filter(|(ts, _)| *ts > last).map(|(_, m)| m) {
+                    for msg in queue
+                        .iter()
+                        .filter_map(|(ts, m)| Some((u64::from_str_radix(&ts, 10).ok()?, m)))
+                        .filter(|(ts, _)| *ts > last)
+                        .map(|(_, m)| m)
+                    {
                         if let Err(_err) = client.stream.write_all(msg.as_bytes()) {
                             let _ = client.stream.shutdown(Shutdown::Both);
                             continue 'drain;
