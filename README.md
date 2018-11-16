@@ -1,7 +1,7 @@
 
 ### twitchchatd
-`TWITCH_CHAT_OAUTH_TOKEN` must be set to your oauth:token from twitch
-
+`TWITCH_CHAT_OAUTH_TOKEN` must be set to your oauth:token from twitch<br>
+`TWITCH_CHAT_LEVEL` controls the logging verbosity: `OFF`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`
 ```
 usage: twitchchatd
   -n int            number of messages to buffer

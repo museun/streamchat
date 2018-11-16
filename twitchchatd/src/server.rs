@@ -13,6 +13,7 @@ impl Server {
     pub fn run(&mut self) {
         while let Some(maybe) = self.conn.try_read() {
             if self.handle(&maybe).is_none() {
+                info!("ending run loop");
                 break;
             }
         }
@@ -31,7 +32,10 @@ impl Server {
                             self.dispatch(&msg);
                         }
                     }
-                    Command::Unknown { .. } => {}
+                    Command::Unknown { cmd, args, data } => {
+                        // TODO catch the NOTICE incorrect password
+                        trace!("unknown msg: {} [{:?}] :{}", cmd, args, data)
+                    }
                 }
             }
             Maybe::Nothing => {}

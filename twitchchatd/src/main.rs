@@ -66,7 +66,9 @@ fn main() {
         ],
     );
 
+    info!("starting server");
     server.run();
+    info!("exiting");
 }
 
 fn init_logger(log_level: &Level, colors: bool) {

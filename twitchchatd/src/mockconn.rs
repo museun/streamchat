@@ -18,18 +18,17 @@ where
 {
     fn try_read(&mut self) -> Option<Maybe> {
         match self.0.next() {
-            Some(Ok(string)) => {
-                std::thread::park_timeout(std::time::Duration::from_millis(100));
-                Some(Maybe::Just(string))
-            }
+            Some(Ok(string)) => Some(Maybe::Just(string)),
             _ => {
-                std::thread::park_timeout(std::time::Duration::from_millis(100)); // to stop spinning
+                // to slow spinning
+                std::thread::park_timeout(std::time::Duration::from_millis(100));
                 Some(Maybe::Nothing)
             }
         }
     }
 
     fn write(&mut self, _data: &str) -> Result<usize, Error> {
+        warn!("writing to a mock conn does nothing");
         Ok(0) // do nothing
     }
 }

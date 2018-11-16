@@ -50,7 +50,7 @@ impl Options {
         let nick = match args.get_as("-n", None, |s| Some(Some(s.clone()))) {
             Some(n) => n,
             None => {
-                eprintln!("flag '-n nick' is required");
+                error!("option '-n nick' is required");
                 std::process::exit(1);
             }
         };

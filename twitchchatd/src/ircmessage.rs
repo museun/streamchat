@@ -9,6 +9,7 @@ pub struct IrcMessage<'a> {
 impl<'a> IrcMessage<'a> {
     pub fn parse(input: &'a str) -> Option<Self> {
         if input.is_empty() {
+            warn!("irc message input is empty");
             return None;
         }
 
@@ -77,9 +78,21 @@ impl<'a> IrcMessage<'a> {
             };
 
             let msg = Message {
-                userid: self.tags.get("user-id")?.to_string(),
+                userid: match self.tags.get("user-id") {
+                    Some(n) => n.to_string(),
+                    None => {
+                        warn!("userid is empty");
+                        return None;
+                    }
+                },
                 timestamp: twitchchat::make_timestamp().to_string(),
-                name: self.tags.get("display-name")?.to_string(),
+                name: match self.tags.get("display-name") {
+                    Some(n) => n.to_string(),
+                    None => {
+                        warn!("name is empty");
+                        return None;
+                    }
+                },
                 data: data.to_string(),
                 badges: self.tags.badges().unwrap_or_default(),
                 emotes: self.tags.emotes().unwrap_or_default(),
@@ -93,6 +106,7 @@ impl<'a> IrcMessage<'a> {
             return Some(msg);
         }
 
+        warn!("could not convert irc message into msg: {:?}", self);
         None
     }
 }
