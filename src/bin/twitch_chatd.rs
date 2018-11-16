@@ -1,5 +1,4 @@
 #![feature(slice_patterns)]
-
 use twitch_chat::prelude::*;
 use twitch_chat::transports::{Socket, Transport};
 

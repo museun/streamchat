@@ -1,5 +1,5 @@
 use crate::prelude::Message;
-use crate::{make_timestamp, Queue};
+use crate::{make_timestamp, queue::Queue};
 
 mod socket;
 pub use self::socket::Socket;

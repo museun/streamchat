@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-
 use std::collections::VecDeque;
 pub struct Queue<T> {
     data: VecDeque<T>,

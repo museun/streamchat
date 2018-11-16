@@ -7,9 +7,7 @@ mod color;
 mod emote;
 mod message;
 
-mod queue;
-pub(crate) use self::queue::Queue;
-
+pub(crate) mod queue;
 pub mod transports;
 
 pub fn make_timestamp() -> u64 {
@@ -20,13 +18,9 @@ pub fn make_timestamp() -> u64 {
 
 pub mod prelude {
     pub use super::args::Args;
-
     pub use super::badge::Badge;
     pub use super::color::Color;
     pub use super::emote::Emote;
     pub use super::message::Message;
-
     pub use super::transports::Transport;
-
-    pub use super::*;
 }
