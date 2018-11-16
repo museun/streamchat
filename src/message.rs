@@ -7,9 +7,11 @@ pub struct Message {
     pub timestamp: u64,
     pub name: String,
     pub data: String,
-    pub badges: Vec<Badge>,
-    pub emotes: Vec<Emote>,
-    pub tags: HashMap<String, String>,
     pub color: Color,
     pub is_action: bool,
+
+    pub badges: Vec<Badge>,
+    pub emotes: Vec<Emote>,
+
+    pub tags: HashMap<String, String>,
 }
