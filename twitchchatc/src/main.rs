@@ -26,7 +26,7 @@ fn connect(opts: &Options) -> Result<(), Error> {
     let conn = TcpStream::connect(&opts.addr).map_err(|_e| Error::CannotConnect)?;
     let reader = BufReader::new(conn).lines();
 
-    let buffer = BufferWriter::stdout(if opts.use_colors {
+    let writer = BufferWriter::stdout(if opts.use_colors {
         ColorChoice::Auto
     } else {
         ColorChoice::Never
@@ -35,7 +35,10 @@ fn connect(opts: &Options) -> Result<(), Error> {
     for line in reader {
         let line = line.map_err(|_e| Error::CannotRead)?;
         let msg = serde_json::from_str::<Message>(&line).expect("valid json");
-        Buffer::new(&buffer, &opts, &msg).print();
+
+        let mut buf = writer.buffer();
+        Buffer::format(&opts, &msg, &mut buf);
+        writer.print(&buf).expect("print");
     }
     Ok(())
 }

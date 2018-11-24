@@ -2,133 +2,123 @@ use super::*;
 
 use termcolor::{Color, ColorSpec, WriteColor};
 use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 pub(crate) struct Buffer<'a> {
-    writer: &'a termcolor::BufferWriter,
-    buf: termcolor::Buffer,
     opts: &'a Options,
-    pad: String,
-    msg: &'a Message,
-    lines: Vec<String>,
 }
 
 impl<'a> Buffer<'a> {
-    pub fn new(buffer: &'a termcolor::BufferWriter, opts: &'a Options, msg: &'a Message) -> Self {
-        let pad: String = std::iter::repeat(" ")
-            .take(opts.name_max + 2)
-            .collect::<String>();
-
-        Self {
-            writer: buffer,
-            buf: buffer.buffer(),
-            pad,
-            opts,
-            msg,
-            lines: vec![],
-        }
+    pub fn format(opts: &'a Options, msg: &'a Message, buf: &mut termcolor::Buffer) {
+        Self { opts }.print(msg, buf)
     }
 
-    pub fn print(mut self) {
-        self.add_name(self.msg.is_action);
-        self.split_lines();
-        self.write_lines();
-        self.writer.print(&self.buf).expect("print");
+    fn print(self, msg: &'a Message, buf: &mut termcolor::Buffer) {
+        self.add_name(buf, &msg);
+        let lines = self.split_line(&msg.data);
+        self.write_lines(buf, &lines);
     }
 
-    fn add_name(&mut self, action: bool) {
-        let mut name = self.msg.name.clone();
-        let name = self.truncate(&mut name);
-        let pad = self.opts.name_max.saturating_sub(name.len()) + 1;
+    fn add_name(&self, buf: &mut termcolor::Buffer, msg: &'a Message) {
+        let mut name = msg.name.clone();
+        truncate(&mut name, self.opts.name_max);
+        let pad = self.opts.name_max.saturating_sub(name.width()) + 1;
 
-        if action {
-            write!(self.buf, "{:>offset$}", "*", offset = pad).unwrap();
+        if msg.is_action {
+            write!(buf, "{:>offset$}", "*", offset = pad).unwrap();
         } else {
-            write!(self.buf, "{:>offset$}", " ", offset = pad).unwrap();
+            write!(buf, "{:>offset$}", " ", offset = pad).unwrap();
         }
 
         let mut spec = ColorSpec::new();
-        let (r, g, b) = (self.msg.color.r, self.msg.color.g, self.msg.color.b);
-        spec.set_fg(Some(Color::Rgb(r, g, b)));
-        self.buf.set_color(&spec).expect("set color");
-        write!(self.buf, "{}", name).unwrap();
-        self.buf.reset().expect("reset");
+        let (r, g, b) = (msg.color.r, msg.color.g, msg.color.b);
 
-        if action {
-            write!(self.buf, " ").unwrap();
+        spec.set_fg(Some(Color::Rgb(r, g, b)));
+        buf.set_color(&spec).expect("set color");
+
+        write!(buf, "{}", name).unwrap();
+        buf.reset().expect("reset");
+
+        if msg.is_action {
+            write!(buf, " ").unwrap();
         } else {
-            write!(self.buf, ": ").unwrap();
+            write!(buf, ": ").unwrap();
         }
     }
 
-    fn write_lines(&mut self) {
-        for (i, s) in self.lines.iter().map(|s| s.trim_left()).enumerate() {
+    fn write_lines(&self, buf: &mut termcolor::Buffer, lines: &[String]) {
+        let pad: String = std::iter::repeat(" ")
+            .take(self.opts.name_max + 2)
+            .collect::<String>();
+
+        for (i, s) in lines.iter().map(|s| s.trim_left()).enumerate() {
             if i == 0 {
-                write!(self.buf, "{}", s).unwrap();
+                write!(buf, "{}", s).unwrap();
             } else {
-                write!(self.buf, "{}{}{}", self.opts.left, self.pad, s).unwrap();
+                write!(buf, "{}{}{}", self.opts.left, pad, s).unwrap();
             }
-            if self.lines.len() == 1 {
-                writeln!(self.buf).unwrap();
+            if lines.len() == 1 {
+                writeln!(buf).unwrap();
                 continue;
             }
-            if i < self.lines.len() - 1 {
-                let len = self.opts.line_max.saturating_sub(s.len());
-                writeln!(self.buf, "{: >width$}", self.opts.right, width = len).unwrap();
+            if i < lines.len() - 1 {
+                let len = self.opts.line_max.saturating_sub(s.width());
+                writeln!(buf, "{: >width$}", self.opts.right, width = len).unwrap();
             } else {
-                writeln!(self.buf).unwrap();
+                writeln!(buf).unwrap();
             }
         }
     }
 
-    fn split_lines(&mut self) {
+    fn split_line(&self, data: &str) -> Vec<String> {
         let max = self.opts.line_max;
 
         let mut lines = vec![];
         let mut line = String::new();
-        for s in self.msg.data.split_word_bounds() {
-            if s.len() >= max {
-                let mut tmp = String::new();
-                for c in s.chars() {
-                    if line.len() == max {
-                        lines.push(line.clone());
-                        line.clear();
-                    }
-                    if tmp.len() == max {
-                        line.push_str(&tmp);
-                        tmp.clear();
-                    }
-                    tmp.push(c);
-                }
+        let mut buf = String::new();
 
-                if line.len() == max {
+        for s in data.split_word_bounds() {
+            if s.width() < max {
+                if line.width() + s.width() >= max {
                     lines.push(line.clone());
                     line.clear();
                 }
-                if !tmp.is_empty() {
-                    line.push_str(&tmp)
-                }
+                line.push_str(&s);
                 continue;
             }
-            if line.len() + s.len() >= max {
+
+            for c in s.chars() {
+                if line.width() == max {
+                    lines.push(line.clone());
+                    line.clear();
+                }
+                if buf.width() == max {
+                    line.push_str(&buf);
+                    buf.clear();
+                }
+                buf.push(c);
+            }
+
+            if line.width() == max {
                 lines.push(line.clone());
                 line.clear();
             }
-            line.push_str(&s);
+            if !buf.is_empty() {
+                line.push_str(&buf)
+            }
         }
         if !line.is_empty() {
             lines.push(line);
         }
-
-        std::mem::replace(&mut self.lines, lines);
+        lines
     }
+}
 
-    fn truncate<'b>(&self, name: &'b mut String) -> &'b String {
-        let max = self.opts.name_max - 1;
-        if name.len() <= max {
-            return name;
-        }
-        name.truncate(max);
-        name.insert(max, '…');
-        name
+fn truncate(s: &mut String, max: usize) {
+    if s.width() <= max {
+        return;
     }
+    let max = max.saturating_sub(1);
+    s.truncate(max);
+    s.insert(max, '…');
 }
