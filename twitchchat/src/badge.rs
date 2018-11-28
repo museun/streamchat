@@ -23,7 +23,7 @@ impl FromStr for Badge {
             "staff" => Badge::Staff,
             "turbo" => Badge::Turbo,
             b => {
-                trace!("unknown badge: {}", b);
+                debug!("unknown badge: {}", b);
                 return Err(());
             }
         };

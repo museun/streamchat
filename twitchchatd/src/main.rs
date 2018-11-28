@@ -17,6 +17,7 @@ mod server;
 mod tags;
 mod tcpconn;
 
+mod queue;
 mod transports;
 
 pub use self::{

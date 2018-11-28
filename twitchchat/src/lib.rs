@@ -3,13 +3,11 @@ extern crate serde_derive;
 #[macro_use]
 extern crate log;
 
-mod args;
-mod badge;
-mod color;
-mod emote;
-mod message;
-
-pub mod queue;
+mod args;  // simple args parsing
+mod badge; // twitch badges
+mod color; // twitch colors (rgb 24-bit)
+mod emote; // emote parsing
+mod message; // twitch message
 
 pub trait Transport: Send {
     fn send(&mut self, data: &message::Message);

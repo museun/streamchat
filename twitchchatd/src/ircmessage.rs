@@ -85,7 +85,7 @@ impl<'a> IrcMessage<'a> {
                         return None;
                     }
                 },
-                timestamp: self::make_timestamp().to_string(),
+                timestamp: crate::make_timestamp().to_string(),
                 name: match self.tags.get("display-name") {
                     Some(n) => n.to_string(),
                     None => {
