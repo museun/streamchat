@@ -11,6 +11,7 @@ pub struct TcpConn {
 
 impl TcpConn {
     pub fn connect(addr: &str, token: &str, channel: &str, nick: &str) -> Result<Self, Error> {
+        info!("connecting to twitch for #{} / {}", channel, nick);
         macro_rules! maybe {
             ($e:expr) => {
                 $e.map_err(|_e| Error::CannotConnect)?
@@ -37,6 +38,7 @@ impl TcpConn {
         maybe!(this.write(&nick));
         maybe!(this.write(&join));
 
+        info!("connected to twitch");
         Ok(this)
     }
 }

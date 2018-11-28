@@ -1,6 +1,3 @@
-#![feature(await_macro, async_await, futures_api)]
-#![feature(pin)]
-#![feature(arbitrary_self_types)]
 #![feature(slice_patterns)]
 use twitchchat::prelude::*;
 
@@ -65,11 +62,7 @@ fn main() {
             (None, Some(fd)) => Box::new(MockConn::new(fd.lines())),
             _ => unreachable!(),
         },
-        vec![
-            Box::new(Socket::start(&options.addr, options.limit)), //
-            Box::new(File::create("out.txt", true)),
-            Box::new(File::create("out.json", false)),
-        ],
+        vec![Box::new(Socket::start(&options.addr, options.limit))],
     );
 
     info!("starting server");

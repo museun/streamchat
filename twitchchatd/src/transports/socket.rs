@@ -52,7 +52,7 @@ impl Socket {
                                 last: 0,
                                 stream,
                             };
-                            trace!("accepted client from: {}", addr);
+                            info!("accepted client from: {}", addr);
                             clients.push(client);
                             break 'accept;
                         }
