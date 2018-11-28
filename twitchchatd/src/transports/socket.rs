@@ -94,7 +94,7 @@ impl Socket {
                         continue 'drain;
                     }
 
-                    client.last = make_timestamp();
+                    client.last = crate::make_timestamp();
                     alive.push(client)
                 }
 

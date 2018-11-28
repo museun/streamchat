@@ -1,6 +1,5 @@
 #![feature(slice_patterns)]
 use twitchchat::prelude::*;
-use twitchchat::transports::{File, Socket, Transport};
 
 #[macro_use]
 extern crate log;
@@ -18,6 +17,8 @@ mod server;
 mod tags;
 mod tcpconn;
 
+mod transports;
+
 pub use self::{
     command::*,
     conn::*,
@@ -28,6 +29,7 @@ pub use self::{
     server::*,
     tags::*,
     tcpconn::*,
+    transports::{File, Socket},
 };
 
 fn main() {
@@ -89,4 +91,10 @@ fn init_logger(log_level: &Level, colors: bool) {
     } else {
         SimpleLogger::init(filter, config).expect("enable logging");
     }
+}
+
+pub(crate) fn make_timestamp() -> u64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+    ts.as_secs() * 1000 + u64::from(ts.subsec_nanos()) / 1_000_000
 }

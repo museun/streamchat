@@ -6,5 +6,8 @@ edition = "2018"
 
 [dependencies]
 twitchchat = { path = "../twitchchat" }
+
+serde_json = "1.0.33"
 log = "0.4.6"
 simplelog = "0.5.3"
+crossbeam-channel = "0.3.2"

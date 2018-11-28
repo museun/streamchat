@@ -85,7 +85,7 @@ impl<'a> IrcMessage<'a> {
                         return None;
                     }
                 },
-                timestamp: twitchchat::make_timestamp().to_string(),
+                timestamp: self::make_timestamp().to_string(),
                 name: match self.tags.get("display-name") {
                     Some(n) => n.to_string(),
                     None => {

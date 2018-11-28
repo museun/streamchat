@@ -9,13 +9,10 @@ mod color;
 mod emote;
 mod message;
 
-pub(crate) mod queue;
-pub mod transports;
+pub mod queue;
 
-pub fn make_timestamp() -> u64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    ts.as_secs() * 1000 + u64::from(ts.subsec_nanos()) / 1_000_000
+pub trait Transport: Send {
+    fn send(&mut self, data: &message::Message);
 }
 
 pub mod prelude {
@@ -24,5 +21,5 @@ pub mod prelude {
     pub use super::color::Color;
     pub use super::emote::Emote;
     pub use super::message::Message;
-    pub use super::transports::Transport;
+    pub use super::Transport;
 }
