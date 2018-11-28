@@ -5,6 +5,9 @@ authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 
 [dependencies]
+log = "0.4.6"
+
 serde = "1.0.80"
 serde_derive = "1.0.80"
-log = "0.4.6"
+
+
