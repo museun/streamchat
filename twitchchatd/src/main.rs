@@ -1,3 +1,6 @@
+#![feature(await_macro, async_await, futures_api)]
+#![feature(pin)]
+#![feature(arbitrary_self_types)]
 #![feature(slice_patterns)]
 use twitchchat::prelude::*;
 
