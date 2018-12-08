@@ -13,14 +13,13 @@ impl<'a> IrcMessage<'a> {
             return None;
         }
 
-        let (input, tags) = match input.as_bytes() {
-            [b'@', ..] => {
-                let pos = input.find(' ').unwrap();
-                let sub = &input[..pos];
-                let tags = Tags::parse(&sub);
-                (&input[pos + 1..], tags)
-            }
-            [b':', ..] | [b'P', b'I', b'N', b'G', ..] | _ => (input, Tags::default()),
+        let (input, tags) = if input.starts_with('@') {
+            let pos = input.find(' ').unwrap();
+            let sub = &input[..pos];
+            let tags = Tags::parse(&sub);
+            (&input[pos + 1..], tags)
+        } else {
+            (input, Tags::default())
         };
 
         fn parse_prefix(input: &str) -> Option<&str> {

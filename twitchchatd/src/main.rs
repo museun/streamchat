@@ -1,4 +1,3 @@
-#![feature(slice_patterns)]
 use twitchchat::prelude::*;
 
 use log::{error, info, trace, warn};
