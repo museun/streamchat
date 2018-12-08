@@ -25,18 +25,14 @@ impl TcpConn {
         let reader = BufReader::new(maybe!(conn.try_clone())).lines();
         let writer = BufWriter::new(maybe!(conn.try_clone()));
 
-        let pass = format!("PASS {}", &token);
-        let nick = format!("NICK {}", &nick);
-        let join = format!("JOIN #{}", &channel);
-
         let mut this = Self { reader, writer };
 
         maybe!(this.write("CAP REQ :twitch.tv/tags"));
         maybe!(this.write("CAP REQ :twitch.tv/membership"));
         maybe!(this.write("CAP REQ :twitch.tv/commands"));
-        maybe!(this.write(&pass));
-        maybe!(this.write(&nick));
-        maybe!(this.write(&join));
+        maybe!(this.write(&format!("PASS {}", &token)));
+        maybe!(this.write(&format!("NICK {}", &nick)));
+        maybe!(this.write(&format!("JOIN #{}", &channel)));
 
         info!("connected to twitch");
         Ok(this)

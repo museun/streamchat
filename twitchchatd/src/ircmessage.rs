@@ -1,6 +1,23 @@
 use super::*;
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum Command<'a> {
+    Ping {
+        data: &'a str,
+    },
+    Privmsg {
+        target: &'a str,
+        sender: &'a str,
+        data: &'a str,
+    },
+    Unknown {
+        cmd: &'a str,
+        args: Vec<&'a str>,
+        data: &'a str,
+    },
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct IrcMessage<'a> {
     pub tags: Tags,
     pub command: Command<'a>,

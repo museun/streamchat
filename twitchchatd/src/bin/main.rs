@@ -2,7 +2,6 @@ use twitchchatd::*;
 
 use log::{error, info};
 use std::env;
-use std::io::BufRead;
 
 fn main() {
     let (name, args) = {
@@ -20,19 +19,18 @@ fn main() {
         }
     };
 
+    let addr = "irc.chat.twitch.tv:6667";
+
+    let conn = match TcpConn::connect(&addr, &token, &options.channel, &options.nick) {
+        Ok(conn) => conn,
+        Err(_err) => {
+            error!("cannot connect");
+            std::process::exit(1)
+        }
+    };
+
     let mut server = Server::new(
-        match (options.file, options.stdin) {
-            (None, None) => {
-                let addr = "irc.chat.twitch.tv:6667";
-                Box::new(
-                    TcpConn::connect(&addr, &token, &options.channel, &options.nick)
-                        .expect("listen"),
-                )
-            }
-            (Some(fd), None) => Box::new(MockConn::new(fd.lines())),
-            (None, Some(fd)) => Box::new(MockConn::new(fd.lines())),
-            _ => unreachable!(),
-        },
+        conn,
         vec![Box::new(Socket::start(&options.addr, options.limit))],
     );
 

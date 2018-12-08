@@ -1,12 +1,12 @@
 use super::*;
 
-pub struct Server {
+pub struct Server<C: Conn> {
     transports: Vec<Box<dyn Transport>>,
-    conn: Box<dyn Conn>, // this..
+    conn: C,
 }
 
-impl Server {
-    pub fn new(conn: Box<dyn Conn>, transports: Vec<Box<dyn Transport>>) -> Self {
+impl<C: Conn> Server<C> {
+    pub fn new(conn: C, transports: Vec<Box<dyn Transport>>) -> Self {
         Self { transports, conn }
     }
 
