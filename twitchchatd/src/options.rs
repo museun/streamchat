@@ -63,7 +63,7 @@ impl Options {
             channel,
             nick,
             log_level: Level::from_env(),
-            use_colors: env::var("NO_COLOR").is_err(),
+            use_colors: std::env::var("NO_COLOR").is_err(),
         }
     }
 }

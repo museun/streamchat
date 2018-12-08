@@ -1,33 +1,8 @@
-use twitchchat::prelude::*;
+use twitchchatd::*;
 
-use log::{error, info, trace, warn};
-
+use log::{error, info};
 use std::env;
 use std::io::BufRead;
-
-mod command;
-mod conn;
-mod error;
-mod ircmessage;
-mod mockconn;
-mod options;
-mod server;
-mod tcpconn;
-
-mod queue;
-mod transports;
-
-pub use self::{
-    command::*,
-    conn::*,
-    error::*,
-    ircmessage::*,
-    mockconn::*,
-    options::*,
-    server::*,
-    tcpconn::*,
-    transports::{File, Socket},
-};
 
 fn main() {
     let (name, args) = {
@@ -84,10 +59,4 @@ fn init_logger(log_level: &Level, colors: bool) {
     } else {
         SimpleLogger::init(filter, config).expect("enable logging");
     }
-}
-
-pub(crate) fn make_timestamp() -> u64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    ts.as_secs() * 1000 + u64::from(ts.subsec_nanos()) / 1_000_000
 }
