@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 // TODO borrow the strings
 pub struct Args(pub HashMap<String, String>);

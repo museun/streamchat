@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct IrcMessage<'a> {
-    pub tags: Tags<'a>,
+    pub tags: Tags,
     pub command: Command<'a>,
 }
 
@@ -79,7 +79,7 @@ impl<'a> IrcMessage<'a> {
 
             let msg = Message {
                 userid: match self.tags.get("user-id") {
-                    Some(n) => n.to_string(),
+                    Some(n) => n.into(),
                     None => {
                         warn!("userid is empty");
                         return None;
@@ -87,7 +87,7 @@ impl<'a> IrcMessage<'a> {
                 },
                 timestamp: crate::make_timestamp().to_string(),
                 name: match self.tags.get("display-name") {
-                    Some(n) => n.to_string(),
+                    Some(n) => n.into(),
                     None => {
                         warn!("name is empty");
                         return None;
@@ -96,7 +96,7 @@ impl<'a> IrcMessage<'a> {
                 data: data.to_string(),
                 badges: self.tags.badges().unwrap_or_default(),
                 emotes: self.tags.emotes().unwrap_or_default(),
-                tags: self.tags.cloned(),
+                tags: self.tags.clone(),
                 color: match self.tags.get("color") {
                     Some(color) => Color::parse(color),
                     None => Color::default(),

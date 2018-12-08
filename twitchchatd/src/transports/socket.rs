@@ -5,6 +5,7 @@ use std::net::{Shutdown, TcpListener, TcpStream};
 use std::thread;
 
 use crossbeam_channel as channel;
+use log::{debug, info, trace, warn};
 
 #[derive(Debug)]
 pub struct Socket {

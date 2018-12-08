@@ -74,7 +74,6 @@ fn split(raw: &str) -> Vec<String> {
     if raw.len() > 510 && raw.contains(':') {
         let mut split = raw.splitn(2, ':').map(str::trim);
         let (head, tail) = (split.next().unwrap(), split.next().unwrap());
-        // this isn't utf-8 correct
         return tail
             .as_bytes()
             .chunks(510 - head.len())
@@ -83,7 +82,5 @@ fn split(raw: &str) -> Vec<String> {
             .map(|s| format!("{} :{}\r\n", head, s))
             .collect();
     }
-
-    // TODO use a SmallVec here
     vec![format!("{}\r\n", raw)]
 }

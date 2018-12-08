@@ -1,3 +1,6 @@
+use log::trace;
+use serde_derive::{Deserialize, Serialize};
+
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Color {
     pub r: u8,

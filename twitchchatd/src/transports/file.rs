@@ -5,6 +5,8 @@ use std::io::prelude::*;
 use std::io::BufWriter;
 use std::path::Path;
 
+use log::trace;
+
 // TODO this needs some actual error handling
 pub struct File {
     formatted: bool,

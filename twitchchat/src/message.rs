@@ -1,10 +1,12 @@
 use crate::prelude::*;
-use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use serde_derive::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Message {
-    pub userid: String,    // for most compatibility
-    pub timestamp: String, // for most compatibility
+    pub userid: String,
+    pub timestamp: String,
+
     pub name: String,
     pub data: String,
     pub color: Color,
@@ -13,5 +15,5 @@ pub struct Message {
     pub badges: Vec<Badge>,
     pub emotes: Vec<Emote>,
 
-    pub tags: HashMap<String, String>,
+    pub tags: Tags,
 }

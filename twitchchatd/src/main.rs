@@ -1,8 +1,7 @@
 #![feature(slice_patterns)]
 use twitchchat::prelude::*;
 
-#[macro_use]
-extern crate log;
+use log::{error, info, trace, warn};
 
 use std::env;
 use std::io::BufRead;
@@ -14,7 +13,6 @@ mod ircmessage;
 mod mockconn;
 mod options;
 mod server;
-mod tags;
 mod tcpconn;
 
 mod queue;
@@ -28,7 +26,6 @@ pub use self::{
     mockconn::*,
     options::*,
     server::*,
-    tags::*,
     tcpconn::*,
     transports::{File, Socket},
 };
