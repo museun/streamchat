@@ -23,6 +23,11 @@ import!(
 
 pub(crate) use twitchchat::*;
 
+// TODO this should return an error
+pub trait Transport: Send {
+    fn send(&mut self, data: &Message);
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Maybe {
     Just(String),

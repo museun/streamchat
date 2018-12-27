@@ -1,5 +1,6 @@
+use super::Transport;
 use crate::queue::Queue;
-use twitchchat::{Message, Transport};
+use twitchchat::Message;
 
 mod file;
 mod socket;

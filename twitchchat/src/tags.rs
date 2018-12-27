@@ -1,6 +1,5 @@
 use super::{Badge, Emote};
 use hashbrown::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]

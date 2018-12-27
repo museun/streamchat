@@ -2,12 +2,8 @@ mod args; // simple args parsing
 mod badge; // twitch badges
 mod color; // twitch colors (rgb 24-bit)
 mod emote; // emote parsing
-mod message;
-mod tags; // twitch message
-
-pub trait Transport: Send {
-    fn send(&mut self, data: &message::Message);
-}
+mod message; // twitch message
+mod tags; // twitch tags
 
 pub use self::args::Args;
 pub use self::badge::Badge;
