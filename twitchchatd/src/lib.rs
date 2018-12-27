@@ -17,7 +17,8 @@ import!(
     server,     //
     tcpconn,    //
     queue,      //
-    transports  //
+    transports, //
+    custom      //
 );
 
 pub(crate) use twitchchat::prelude::*;

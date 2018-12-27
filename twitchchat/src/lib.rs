@@ -12,7 +12,7 @@ pub trait Transport: Send {
 pub mod prelude {
     pub use super::args::Args;
     pub use super::badge::Badge;
-    pub use super::color::Color;
+    pub use super::color::{Color, TwitchColor};
     pub use super::emote::Emote;
     pub use super::message::Message;
     pub use super::tags::Tags;

@@ -3,11 +3,16 @@ use super::*;
 pub struct Server<C: Conn> {
     transports: Vec<Box<dyn Transport>>,
     conn: C,
+    colors: CustomColors,
 }
 
 impl<C: Conn> Server<C> {
     pub fn new(conn: C, transports: Vec<Box<dyn Transport>>) -> Self {
-        Self { transports, conn }
+        Self {
+            transports,
+            conn,
+            colors: CustomColors::load(),
+        }
     }
 
     pub fn run(&mut self) {
@@ -28,7 +33,7 @@ impl<C: Conn> Server<C> {
                         self.conn.write(&format!("PING {}", data)).ok()?;
                     }
                     Command::Privmsg { .. } => {
-                        if let Some(msg) = msg.try_into_msg() {
+                        if let Some(msg) = msg.try_into_msg(&mut self.colors) {
                             self.dispatch(&msg);
                         }
                     }

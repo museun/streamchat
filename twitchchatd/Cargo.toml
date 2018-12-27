@@ -9,4 +9,5 @@ twitchchat = { path = "../twitchchat" }
 log = "0.4.6"
 simplelog = "0.5.3"
 serde_json = "1.0.33"
+serde = {version = "1.0.82", features = ["derive"]}
 crossbeam-channel = "0.3.2"

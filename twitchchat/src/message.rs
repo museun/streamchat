@@ -9,7 +9,10 @@ pub struct Message {
 
     pub name: String,
     pub data: String,
+
     pub color: Color,
+    pub custom_color: Option<Color>,
+
     pub is_action: bool,
 
     pub badges: Vec<Badge>,

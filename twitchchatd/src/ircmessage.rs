@@ -85,7 +85,7 @@ impl<'a> IrcMessage<'a> {
         Some(IrcMessage { tags, command })
     }
 
-    pub fn try_into_msg(&self) -> Option<Message> {
+    pub fn try_into_msg(&self, colors: &mut CustomColors) -> Option<Message> {
         if let Command::Privmsg { data, .. } = self.command {
             let (data, is_action) = if data.starts_with('\x01') {
                 (&data[8..data.len() - 1], true)
@@ -93,14 +93,36 @@ impl<'a> IrcMessage<'a> {
                 (data, false)
             };
 
-            let msg = Message {
-                userid: match self.tags.get("user-id") {
-                    Some(n) => n.into(),
-                    None => {
-                        warn!("userid is empty");
-                        return None;
+            let userid = match self.tags.get("user-id") {
+                Some(n) => n,
+                None => {
+                    warn!("userid is empty");
+                    return None;
+                }
+            };
+
+            let mut split = data.splitn(2, ' ');
+            match (split.next(), split.next()) {
+                (Some("!color"), Some(color)) => {
+                    let color: Color = TwitchColor::from(color).into();
+
+                    if !color.is_dark() {
+                        info!("setting {}'s color to: {}", userid, color);
+                        colors.set(userid, color);
+                    } else {
+                        warn!("color {} is too dark", color);
+                        colors.set(userid, Color::default());
                     }
-                },
+                }
+                (Some("!color"), None) => {
+                    info!("resetting {}'s color", userid);
+                    colors.remove(userid);
+                }
+                _ => {}
+            };
+
+            let msg = Message {
+                userid: userid.to_string(),
                 timestamp: crate::make_timestamp().to_string(),
                 name: match self.tags.get("display-name") {
                     Some(n) => n.into(),
@@ -113,10 +135,8 @@ impl<'a> IrcMessage<'a> {
                 badges: self.tags.badges().unwrap_or_default(),
                 emotes: self.tags.emotes().unwrap_or_default(),
                 tags: self.tags.clone(),
-                color: match self.tags.get("color") {
-                    Some(color) => Color::parse(color),
-                    None => Color::default(),
-                },
+                color: self.tags.get("color").map(Color::from).unwrap_or_default(),
+                custom_color: colors.get(userid),
                 is_action,
             };
             return Some(msg);

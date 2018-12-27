@@ -1,6 +1,6 @@
 use super::*;
 
-use termcolor::{Color, ColorSpec, WriteColor};
+use termcolor::{Color as TColor, ColorSpec, WriteColor};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -31,9 +31,15 @@ impl<'a> Buffer<'a> {
         }
 
         let mut spec = ColorSpec::new();
-        let (r, g, b) = (msg.color.r, msg.color.g, msg.color.b);
 
-        spec.set_fg(Some(Color::Rgb(r, g, b)));
+        let color = if let Some(Color(r, g, b)) = msg.custom_color {
+            TColor::Rgb(r, g, b)
+        } else {
+            let Color(r, g, b) = msg.color;
+            TColor::Rgb(r, g, b)
+        };
+
+        spec.set_fg(Some(color));
         buf.set_color(&spec).expect("set color");
 
         write!(buf, "{}", name).unwrap();
