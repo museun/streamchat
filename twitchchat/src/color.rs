@@ -1,4 +1,4 @@
-use log::trace;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -31,7 +31,7 @@ impl<'a> From<&'a str> for Color {
             (Some('#'), 7) => &s[1..],
             (.., 6) => s,
             _ => {
-                trace!("invalid color '{}' defaulting", s);
+                debug!("invalid color '{}' defaulting", s);
                 return Self::default();
             }
         };
