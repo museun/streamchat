@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use log::debug;
 use serde::{Deserialize, Serialize};
 
@@ -12,12 +10,12 @@ pub enum Badge {
     Subscriber,
     Staff,
     Turbo,
+    Unknown(String),
 }
 
-impl FromStr for Badge {
-    type Err = ();
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let res = match s.to_ascii_lowercase().as_str() {
+impl Badge {
+    pub(crate) fn parse(s: &str) -> Self {
+        match s.to_ascii_lowercase().as_str() {
             "admin" => Badge::Admin,
             "broadcaster" => Badge::Broadcaster,
             "global_mod" => Badge::GlobalMod,
@@ -27,9 +25,8 @@ impl FromStr for Badge {
             "turbo" => Badge::Turbo,
             b => {
                 debug!("unknown badge: {}", b);
-                return Err(());
+                Badge::Unknown(s.to_string())
             }
-        };
-        Ok(res)
+        }
     }
 }

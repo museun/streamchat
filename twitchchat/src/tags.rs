@@ -1,6 +1,5 @@
 use super::{Badge, Emote};
 use hashbrown::HashMap;
-use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
@@ -42,7 +41,7 @@ impl Tags {
                     let mut t = s.split('/');
                     (t.next(), t.next()) // badge, version
                 })
-                .filter_map(|(s, _)| s.and_then(|s| Badge::from_str(s).ok()))
+                .filter_map(|(s, _)| s.map(Badge::parse))
                 .collect::<Vec<_>>(),
         )
     }
