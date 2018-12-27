@@ -2,7 +2,7 @@ use super::prelude::*;
 use hashbrown::HashMap;
 use std::str::FromStr;
 
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Tags(HashMap<String, String>);

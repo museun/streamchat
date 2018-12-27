@@ -1,5 +1,5 @@
 use log::trace;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]

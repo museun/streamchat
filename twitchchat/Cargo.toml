@@ -6,6 +6,5 @@ edition = "2018"
 
 [dependencies]
 log = "0.4.6"
-serde = "1.0.80"
-serde_derive = "1.0.80"
+serde = {version = "1.0.82", features = ["derive"]}
 hashbrown = { version = "0.1.7", features = ["serde"] }

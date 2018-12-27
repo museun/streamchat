@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use log::debug;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Badge {
