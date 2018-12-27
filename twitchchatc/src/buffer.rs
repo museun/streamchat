@@ -24,14 +24,7 @@ impl<'a> Buffer<'a> {
         truncate(&mut name, self.opts.name_max);
         let pad = self.opts.name_max.saturating_sub(name.width()) + 1;
 
-        if msg.is_action {
-            write!(buf, "{:>offset$}", "*", offset = pad).unwrap();
-        } else {
-            write!(buf, "{:>offset$}", " ", offset = pad).unwrap();
-        }
-
         let mut spec = ColorSpec::new();
-
         let color = if let Some(Color(r, g, b)) = msg.custom_color {
             TColor::Rgb(r, g, b)
         } else {
@@ -41,6 +34,12 @@ impl<'a> Buffer<'a> {
 
         spec.set_fg(Some(color));
         buf.set_color(&spec).expect("set color");
+
+        if msg.is_action {
+            write!(buf, "*{:>offset$} ", " ", offset = pad - 1).unwrap();
+        } else {
+            write!(buf, "{:>offset$}", " ", offset = pad).unwrap();
+        }
 
         write!(buf, "{}", name).unwrap();
         buf.reset().expect("reset");
@@ -57,21 +56,21 @@ impl<'a> Buffer<'a> {
             .take(self.opts.name_max + 2)
             .collect::<String>();
 
-        for (i, s) in lines.iter().map(|s| s.trim_end()).enumerate() {
+        for (i, s) in lines.iter().map(|s| s.trim()).enumerate() {
             if i == 0 {
                 write!(buf, "{}", s).unwrap();
             } else {
                 write!(buf, "{}{}{}", self.opts.left, pad, s).unwrap();
             }
             if lines.len() == 1 {
-                writeln!(buf).unwrap();
+                writeln!(buf).unwrap(); // TODO one of these isn't being trimmed
                 continue;
             }
             if i < lines.len() - 1 {
                 let len = self.opts.line_max.saturating_sub(s.width());
                 writeln!(buf, "{: >width$}", self.opts.right, width = len).unwrap();
             } else {
-                writeln!(buf).unwrap();
+                writeln!(buf).unwrap(); // TODO one of these isn't being trimmed
             }
         }
     }
