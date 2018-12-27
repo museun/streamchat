@@ -1,4 +1,4 @@
-use twitchchat::prelude::*;
+use twitchchat::*;
 
 use std::env;
 use std::io::prelude::*;

@@ -21,7 +21,7 @@ import!(
     custom      //
 );
 
-pub(crate) use twitchchat::prelude::*;
+pub(crate) use twitchchat::*;
 
 #[derive(Debug, PartialEq)]
 pub enum Maybe {

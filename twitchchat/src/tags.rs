@@ -1,4 +1,4 @@
-use super::prelude::*;
+use super::{Badge, Emote};
 use hashbrown::HashMap;
 use std::str::FromStr;
 

@@ -1,5 +1,4 @@
-use crate::prelude::*;
-
+use crate::{Badge, Color, Emote, Tags};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

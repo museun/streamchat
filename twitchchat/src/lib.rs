@@ -9,12 +9,9 @@ pub trait Transport: Send {
     fn send(&mut self, data: &message::Message);
 }
 
-pub mod prelude {
-    pub use super::args::Args;
-    pub use super::badge::Badge;
-    pub use super::color::{Color, TwitchColor};
-    pub use super::emote::Emote;
-    pub use super::message::Message;
-    pub use super::tags::Tags;
-    pub use super::Transport;
-}
+pub use self::args::Args;
+pub use self::badge::Badge;
+pub use self::color::{Color, TwitchColor};
+pub use self::emote::Emote;
+pub use self::message::Message;
+pub use self::tags::Tags;
