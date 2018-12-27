@@ -132,8 +132,8 @@ impl<'a> IrcMessage<'a> {
                     }
                 },
                 data: data.to_string(),
-                badges: self.tags.badges().unwrap_or_default(),
-                emotes: self.tags.emotes().unwrap_or_default(),
+                badges: self.tags.badges_iter().collect(),
+                emotes: self.tags.emotes_iter().collect(),
                 tags: self.tags.clone(),
                 color: self.tags.get("color").map(Color::from).unwrap_or_default(),
                 custom_color: colors.get(userid),

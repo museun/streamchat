@@ -8,41 +8,38 @@ pub struct Tags(HashMap<String, String>);
 
 impl Tags {
     pub fn parse(input: &str) -> Self {
-        let mut map = HashMap::new();
-        let input = &input[1..];
-        for part in input.split_terminator(';') {
-            if let Some(index) = part.find('=') {
-                let (k, v) = (&part[..index], &part[index + 1..]);
-                map.insert(k.to_owned(), v.to_owned());
-            }
-        }
-        Tags(map)
+        Tags(
+            input[1..]
+                .split_terminator(';')
+                .filter_map(|p| p.find('=').map(|pos| (p, pos)))
+                .map(|(p, i)| (&p[..i], &p[i + 1..]))
+                .map(|(k, v)| (k.to_owned(), v.to_owned()))
+                .collect(),
+        )
     }
 
-    pub fn get(&self, key: &str) -> Option<&str> {
-        self.0.get(key).map(|s| s.as_str())
+    pub fn get<K>(&self, key: K) -> Option<&str>
+    where
+        K: AsRef<str>,
+    {
+        self.0.get(key.as_ref()).map(|s| s.as_str())
     }
 
-    pub fn emotes(&self) -> Option<Vec<Emote>> {
-        let e = self.0.get("emotes")?;
-        if !e.is_empty() {
-            Some(Emote::parse(e))
-        } else {
-            None
-        }
+    pub fn emotes_iter<'a>(&'a self) -> impl Iterator<Item = Emote> + 'a {
+        self.0
+            .get("emotes")
+            .into_iter()
+            .flat_map(|e| Emote::parse(e))
     }
 
-    pub fn badges(&self) -> Option<Vec<Badge>> {
-        Some(
-            self.0
-                .get("badges")?
-                .split(',')
+    pub fn badges_iter<'a>(&'a self) -> impl Iterator<Item = Badge> + 'a {
+        self.0.get("badges").into_iter().flat_map(|b| {
+            b.split(',')
                 .map(|s| {
                     let mut t = s.split('/');
                     (t.next(), t.next()) // badge, version
                 })
                 .filter_map(|(s, _)| s.map(Badge::parse))
-                .collect::<Vec<_>>(),
-        )
+        })
     }
 }

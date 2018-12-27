@@ -1,6 +1,5 @@
-use std::ops::Range;
-
 use serde::{Deserialize, Serialize};
+use std::ops::Range;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Emote {
@@ -9,33 +8,28 @@ pub struct Emote {
 }
 
 impl Emote {
-    pub fn parse<S: AsRef<str>>(s: S) -> Vec<Self> {
-        let mut emotes = vec![];
-        for (head, tail) in s
-            .as_ref()
-            .split_terminator('/')
+    pub fn parse<'a>(s: &'a str) -> impl Iterator<Item = Emote> + 'a {
+        s.split_terminator('/')
             .filter_map(|s| Self::get_parts(s, ':'))
-        {
-            if let Some(ranges) = Self::get_ranges(&tail) {
-                emotes.push(Emote {
-                    id: head.parse::<usize>().expect("valid kappa"),
-                    ranges,
-                })
-            }
-        }
-        emotes
+            .flat_map(|(head, tail)| {
+                head.parse::<usize>()
+                    .ok()
+                    .map(|id| (id, Self::get_ranges(&tail)))
+                    .map(|(id, ranges)| Self {
+                        ranges: ranges.collect(),
+                        id,
+                    })
+            })
     }
 
-    fn get_ranges(tail: &str) -> Option<Vec<Range<u16>>> {
-        let mut ranges = vec![];
-        for s in tail.split_terminator(',') {
-            let (start, end) = Self::get_parts(s, '-')?;
-            ranges.push(Range {
-                start: start.parse::<u16>().ok()?,
-                end: end.parse::<u16>().ok()?,
-            });
-        }
-        Some(ranges)
+    fn get_ranges<'a>(tail: &'a str) -> impl Iterator<Item = Range<u16>> + 'a {
+        tail.split_terminator(',')
+            .map(|s| Self::get_parts(s, '-'))
+            .filter_map(|s| s)
+            .map(|(start, end)| Range {
+                start: start.parse::<u16>().expect("twitch sent invalid data"),
+                end: end.parse::<u16>().expect("twitch sent invalid data"),
+            })
     }
 
     fn get_parts(input: &str, sep: char) -> Option<(&str, &str)> {
