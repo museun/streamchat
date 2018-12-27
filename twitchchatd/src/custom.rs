@@ -11,8 +11,12 @@ pub struct CustomColors {
 
 impl CustomColors {
     pub fn load() -> Self {
-        if let Ok(json) = std::fs::read_to_string(&TWITCH_COLORS) {
-            return serde_json::from_str(&json).ok().unwrap_or_default();
+        if let Some(dirs) = directories::ProjectDirs::from("com.github", "museun", "twitchchatd") {
+            let _ = std::fs::create_dir_all(dirs.config_dir());
+            let dir = dirs.config_dir().join(TWITCH_COLORS);
+            if let Ok(json) = std::fs::read_to_string(dir) {
+                return serde_json::from_str(&json).ok().unwrap_or_default();
+            }
         }
         Self::default()
     }
@@ -23,17 +27,27 @@ impl CustomColors {
 
     pub fn set(&mut self, id: impl ToString, color: impl Into<Color>) {
         self.map.insert(id.to_string(), color.into());
+        self.save();
     }
 
     pub fn remove(&mut self, id: &str) {
         self.map.remove(id);
+        self.save();
+    }
+
+    fn save(&self) {
+        if let Some(dirs) = directories::ProjectDirs::from("com.github", "museun", "twitchchatd") {
+            let _ = std::fs::create_dir_all(dirs.config_dir());
+            let dir = dirs.config_dir().join(TWITCH_COLORS);
+            if let Ok(mut fi) = std::fs::File::create(dir) {
+                let _ = serde_json::to_writer_pretty(&mut fi, &self);
+            }
+        }
     }
 }
 
 impl Drop for CustomColors {
     fn drop(&mut self) {
-        if let Ok(mut fi) = std::fs::File::create(&TWITCH_COLORS) {
-            let _ = serde_json::to_writer_pretty(&mut fi, &self);
-        }
+        self.save();
     }
 }
