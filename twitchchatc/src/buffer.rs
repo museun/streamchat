@@ -51,7 +51,7 @@ impl<'a> Buffer<'a> {
             .take(self.opts.name_max + 2)
             .collect::<String>();
 
-        for (i, s) in lines.iter().map(|s| s.trim_left()).enumerate() {
+        for (i, s) in lines.iter().map(|s| s.trim_end()).enumerate() {
             if i == 0 {
                 write!(buf, "{}", s).unwrap();
             } else {
