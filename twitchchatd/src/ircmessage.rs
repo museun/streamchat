@@ -32,8 +32,7 @@ impl<'a> IrcMessage<'a> {
 
         let (input, tags) = if input.starts_with('@') {
             let pos = input.find(' ').unwrap();
-            let sub = &input[..pos];
-            let tags = Tags::parse(&sub);
+            let tags = Tags::parse(&input[..pos]);
             (&input[pos + 1..], tags)
         } else {
             (input, Tags::default())
