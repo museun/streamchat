@@ -1,7 +1,7 @@
 use crate::{Badge, Color, Emote, Tags};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct Message {
     pub userid: String,
     pub timestamp: String,

@@ -1,5 +1,6 @@
 use super::*;
 use std::env;
+use std::path::Path;
 
 const USAGE: &str = r#" 
   -l char           left fringe character. defaults to ⤷
@@ -22,7 +23,8 @@ pub(crate) struct Options {
 
 impl Options {
     pub fn parse(args: &[String]) -> Options {
-        let name = &args[0];
+        // TODO support an .env file
+        let name = Path::new(&args[0]).file_stem().unwrap().to_str().unwrap();
         let args = match Args::parse(&args[1..]) {
             Some(args) => args,
             None => Self::usage_and_die(&name),
