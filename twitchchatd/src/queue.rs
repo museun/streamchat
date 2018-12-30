@@ -54,7 +54,7 @@ mod tests {
         let mut queue = Queue::new(4);
         let results = std::iter::repeat(None)
             .take(4)
-            .chain((0..13).map(|s| Some(s)))
+            .chain((0..13).map(Some))
             .collect::<Vec<_>>();
 
         assert_eq!(queue.is_empty(), true);
@@ -66,11 +66,11 @@ mod tests {
 
         assert_eq!(queue.len(), 4);
 
-        let mut results = (9..).take(4).map(|s| Some(s)).collect::<Vec<_>>();
+        let mut results = (9..).take(4).map(Some).collect::<Vec<_>>();
         results.push(None);
 
-        for n in 0..=queue.size() {
-            assert_eq!(queue.pop(), results[n]);
+        for result in results {
+            assert_eq!(queue.pop(), result)
         }
 
         assert_eq!(queue.len(), 0);
