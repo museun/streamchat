@@ -1,60 +1,102 @@
-use twitchchatd::*;
+use twitchchat::{check, ConfigError, Configurable};
+use twitchchatd::client::{Client, ClientConfig};
+use twitchchatd::dispatcher::Dispatcher;
+use twitchchatd::transports::*;
+use twitchchatd::Transport;
 
-use log::{error, info};
+use log::*;
 use std::env;
+use std::net::TcpStream;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Config {
+    pub address: String,
+    pub limit: usize,
+    pub channel: String,
+    pub nick: String,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            address: "localhost:51002".to_string(),
+            limit: 32,
+            channel: "museun".to_string(),
+            nick: "museun".to_string(),
+        }
+    }
+}
+
+impl Configurable for Config {
+    fn name() -> &'static str {
+        "twitchchatd.toml"
+    }
+}
 
 fn main() {
-    let (name, args) = {
-        let mut args = env::args();
-        (args.next().unwrap(), args.collect::<Vec<_>>())
-    };
-    let options = Options::parse(&name, &args);
-    init_logger(&options.log_level, options.use_colors);
-
-    let token = match env::var("TWITCH_CHAT_OAUTH_TOKEN") {
-        Ok(token) => token,
-        Err(..) => {
-            error!("TWITCH_CHAT_OAUTH_TOKEN must be set to oauth:token");
-            std::process::exit(1);
+    let config = match Config::load() {
+        Ok(config) => config,
+        Err(ConfigError::Io(..)) => {
+            let dir = Config::dir(); // this is probably not the right thing to do
+            info!("creating default config at: {}", dir.to_string_lossy());
+            Config::default().save().expect("save new config");
+            std::process::exit(2)
         }
-    };
-
-    let addr = "irc.chat.twitch.tv:6667";
-
-    let conn = match TcpConn::connect(&addr, &token, &options.channel, &options.nick) {
-        Ok(conn) => conn,
-        Err(_err) => {
-            error!("cannot connect");
+        Err(err) => {
+            error!("cannot load config: {}", err);
             std::process::exit(1)
         }
     };
 
-    let mut server = Server::new(
-        conn,
-        vec![Box::new(Socket::start(&options.addr, options.limit))],
-    );
-
-    info!("starting server");
-    server.run();
-    info!("exiting");
-}
-
-fn init_logger(log_level: &Level, colors: bool) {
-    use simplelog::*;
-
-    let filter = match log_level {
-        self::Level::Off => LevelFilter::Off,
-        self::Level::Trace => LevelFilter::Trace,
-        self::Level::Debug => LevelFilter::Debug,
-        self::Level::Info => LevelFilter::Info,
-        self::Level::Warn => LevelFilter::Warn,
-        self::Level::Error => LevelFilter::Error,
+    let args = match twitchchat::Args::parse(&env::args().collect::<Vec<_>>()) {
+        Some(args) => args,
+        None => std::process::exit(1),
     };
 
-    let config = Config::default();
-    if colors {
-        TermLogger::init(filter, config).expect("enable logging");
-    } else {
-        SimpleLogger::init(filter, config).expect("enable logging");
-    }
+    let limit = args.get_as("-l", config.limit, |s| s.parse::<usize>().ok());
+    let channel = args.get("-c", &config.channel);
+    let nick = args.get("-n", &config.nick);
+
+    let color = env::var("NO_COLOR").is_err();
+    env_logger::Builder::from_default_env()
+        .default_format_timestamp(false)
+        .write_style(if !color {
+            env_logger::WriteStyle::Never
+        } else {
+            env_logger::WriteStyle::Auto
+        })
+        .build();
+
+    let token = check!(
+        env::var("TWITCH_CHAT_OAUTH_TOKEN"),
+        "TWITCH_CHAT_OAUTH_TOKEN must be set to `oauth:token`"
+    );
+
+    let (read, write) = {
+        let stream = check!(
+            TcpStream::connect("irc.chat.twitch.tv:6667"),
+            "cannot connect to twitch"
+        );
+        (stream.try_clone().unwrap(), stream)
+    };
+
+    let mut client = Client::new(read, write);
+
+    check!(
+        client.register(ClientConfig {
+            token,
+            channel,
+            nick,
+        }),
+        "cannot register"
+    );
+
+    let mut transports: &mut [&mut dyn Transport] =
+        &mut [&mut Socket::start(&config.address, limit)];
+
+    info!("starting dispatcher");
+    Dispatcher::new(client, &mut transports).run();
+    info!("exiting");
 }

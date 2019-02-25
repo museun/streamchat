@@ -1,6 +1,7 @@
 use hashbrown::HashMap;
 
 // TODO borrow the strings
+// this isn't needed
 pub struct Args(pub HashMap<String, String>);
 
 impl Args {
@@ -16,11 +17,11 @@ impl Args {
         Some(Args(map))
     }
 
-    pub fn get(&self, k: &str, def: &'static str) -> String {
+    pub fn get(&self, k: &str, def: &str) -> String {
         self.0.get(k).cloned().unwrap_or_else(|| def.to_owned())
     }
 
     pub fn get_as<T>(&self, k: &str, def: T, f: fn(&String) -> Option<T>) -> T {
-        self.0.get(k).and_then(|s| f(s)).unwrap_or_else(|| def)
+        self.0.get(k).and_then(f).unwrap_or_else(|| def)
     }
 }

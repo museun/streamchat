@@ -1,11 +1,19 @@
 #![allow(dead_code)]
 use std::collections::VecDeque;
-pub struct Queue<T> {
+
+#[derive(Debug)]
+pub struct Queue<T>
+where
+    T: std::fmt::Debug,
+{
     data: VecDeque<T>,
     size: usize,
 }
 
-impl<T> Queue<T> {
+impl<T> Queue<T>
+where
+    T: std::fmt::Debug,
+{
     pub fn new(size: usize) -> Self {
         Queue {
             data: VecDeque::with_capacity(size),
@@ -42,38 +50,5 @@ impl<T> Queue<T> {
 
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.data.iter()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn queue() {
-        let mut queue = Queue::new(4);
-        let results = std::iter::repeat(None)
-            .take(4)
-            .chain((0..13).map(Some))
-            .collect::<Vec<_>>();
-
-        assert_eq!(queue.is_empty(), true);
-        assert_eq!(queue.size(), 4);
-
-        for n in 0..13 {
-            assert_eq!(queue.push(n), results[n])
-        }
-
-        assert_eq!(queue.len(), 4);
-
-        let mut results = (9..).take(4).map(Some).collect::<Vec<_>>();
-        results.push(None);
-
-        for result in results {
-            assert_eq!(queue.pop(), result)
-        }
-
-        assert_eq!(queue.len(), 0);
-        assert_eq!(queue.is_empty(), true);
     }
 }

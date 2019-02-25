@@ -1,8 +1,21 @@
-use crate::{Badge, Color, Emote, Tags};
+use crate::types::{Badge, Color, Emote, Tags};
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum Version {
+    V1,
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Version::V1
+    }
+}
 
 #[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct Message {
+    pub version: Version,
+
     pub userid: String,
     pub timestamp: String,
 

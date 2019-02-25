@@ -1,30 +1,34 @@
-use super::*;
+use log::{info, warn};
+use twitchchat::types::{Color, Message, Tags, TwitchColor, Version};
+
+use super::colorconfig::ColorConfig;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Command<'a> {
+pub enum Command {
     Ping {
-        data: &'a str,
+        data: String,
     },
     Privmsg {
-        target: &'a str,
-        sender: &'a str,
-        data: &'a str,
+        target: String,
+        sender: String,
+        data: String,
     },
     Unknown {
-        cmd: &'a str,
-        args: Vec<&'a str>,
-        data: &'a str,
+        cmd: String,
+        args: Vec<String>,
+        data: String,
     },
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct IrcMessage<'a> {
+pub struct IrcMessage {
     pub tags: Tags,
-    pub command: Command<'a>,
+    pub command: Command,
 }
 
-impl<'a> IrcMessage<'a> {
-    pub fn parse(input: &'a str) -> Option<Self> {
+impl IrcMessage {
+    // TODO use an error here
+    pub fn parse(input: &str) -> Option<Self> {
         if input.is_empty() {
             warn!("irc message input is empty");
             return None;
@@ -38,12 +42,12 @@ impl<'a> IrcMessage<'a> {
             (input, Tags::default())
         };
 
-        fn parse_prefix(input: &str) -> Option<&str> {
+        fn parse_prefix(input: &str) -> Option<String> {
             if input.starts_with(':') {
                 let s = &input[1..input.find(' ')?];
                 Some(match s.find('!') {
-                    Some(pos) => &s[..pos],
-                    None => s,
+                    Some(pos) => s[..pos].to_string(),
+                    None => s.to_string(),
                 })
             } else {
                 None
@@ -57,17 +61,17 @@ impl<'a> IrcMessage<'a> {
             .take_while(|s| !s.starts_with(':'))
             .collect::<Vec<_>>();
 
-        fn get_data(s: &str) -> &str {
+        fn get_data(s: &str) -> String {
             if let Some(pos) = &s[1..].find(':') {
-                &s[*pos + 2..]
+                s[*pos + 2..].to_string()
             } else {
-                ""
+                "".to_string()
             }
         }
 
         let command = match args.remove(0) {
             "PRIVMSG" => Command::Privmsg {
-                target: args.remove(0),
+                target: args.remove(0).to_string(),
                 sender: prefix.unwrap(),
                 data: get_data(&input),
             },
@@ -75,8 +79,8 @@ impl<'a> IrcMessage<'a> {
                 data: get_data(&input),
             },
             cmd => Command::Unknown {
-                cmd,
-                args,
+                cmd: cmd.to_string(),
+                args: args.iter().map(ToString::to_string).collect(),
                 data: get_data(&input),
             },
         };
@@ -84,100 +88,68 @@ impl<'a> IrcMessage<'a> {
         Some(IrcMessage { tags, command })
     }
 
-    pub fn try_into_msg(&self, colors: &mut CustomColors) -> Option<Message> {
-        if let Command::Privmsg { data, .. } = self.command {
-            let (data, is_action) = if data.starts_with('\x01') {
-                (&data[8..data.len() - 1], true)
-            } else {
-                (data, false)
-            };
+    // TODO an error instead of an option
+    pub fn try_into_msg(&self, colors: &mut ColorConfig) -> Option<Message> {
+        let (data, userid) = match (&self.command, self.tags.get("user-id")) {
+            (Command::Privmsg { data, .. }, Some(id)) => (data, id),
+            (_, None) => {
+                warn!("no user-id attached to message: {:?}", self); // don't use {:?} here
+                return None;
+            }
+            _ => {
+                warn!("could not convert irc message into msg: {:?}", self); // don't use {:?} here
+                return None;
+            }
+        };
 
-            let userid = match self.tags.get("user-id") {
-                Some(n) => n,
+        let (data, is_action) = if data.starts_with('\x01') {
+            (&data[8..data.len() - 1], true)
+        } else {
+            (data.as_str(), false)
+        };
+
+        // TODO don't do this here.
+        // split this up into some map of lambdas
+        // this color command should maybe cause a refresh on clients?
+        let mut split = data.splitn(2, ' ');
+        match (split.next(), split.next()) {
+            (Some("!color"), Some(color)) => {
+                let color: Color = TwitchColor::from(color).into();
+
+                if !color.is_dark() {
+                    info!("setting {}'s color to: {}", userid, color);
+                    let _ = colors.set(userid, color);
+                } else {
+                    warn!("color {} is too dark", color);
+                    let _ = colors.set(userid, Color::default());
+                }
+            }
+            (Some("!color"), None) => {
+                info!("resetting {}'s color", userid);
+                let _ = colors.remove(userid);
+            }
+            _ => {}
+        };
+
+        let msg = Message {
+            version: Version::default(), // TODO be smarter about this
+            userid: userid.to_string(),
+            timestamp: crate::make_timestamp().to_string(),
+            name: match self.tags.get("display-name") {
+                Some(n) => n.into(),
                 None => {
-                    warn!("userid is empty");
+                    warn!("name is empty");
                     return None;
                 }
-            };
-
-            let mut split = data.splitn(2, ' ');
-            match (split.next(), split.next()) {
-                (Some("!color"), Some(color)) => {
-                    let color: Color = TwitchColor::from(color).into();
-
-                    if !color.is_dark() {
-                        info!("setting {}'s color to: {}", userid, color);
-                        colors.set(userid, color);
-                    } else {
-                        warn!("color {} is too dark", color);
-                        colors.set(userid, Color::default());
-                    }
-                }
-                (Some("!color"), None) => {
-                    info!("resetting {}'s color", userid);
-                    colors.remove(userid);
-                }
-                _ => {}
-            };
-
-            let msg = Message {
-                userid: userid.to_string(),
-                timestamp: crate::make_timestamp().to_string(),
-                name: match self.tags.get("display-name") {
-                    Some(n) => n.into(),
-                    None => {
-                        warn!("name is empty");
-                        return None;
-                    }
-                },
-                data: data.to_string(),
-                badges: self.tags.badges_iter().collect(),
-                emotes: self.tags.emotes_iter().collect(),
-                tags: self.tags.clone(),
-                color: self.tags.get("color").map(Color::from).unwrap_or_default(),
-                custom_color: colors.get(userid),
-                is_action,
-            };
-            return Some(msg);
-        }
-
-        warn!("could not convert irc message into msg: {:?}", self);
-        None
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn parse_message() {
-        let inputs = &[
-            (
-                ":test!test@test.tmi.twitch.tv PRIVMSG #museun :this is a test :)",
-                IrcMessage {
-                    tags: Tags::default(),
-                    command: Command::Privmsg {
-                        target: "#museun",
-                        sender: "test",
-                        data: "this is a test :)",
-                    },
-                },
-            ),
-            (
-                ":test!test@test.tmi.twitch.tv JOIN #museun",
-                IrcMessage {
-                    tags: Tags::default(),
-                    command: Command::Unknown {
-                        cmd: "JOIN",
-                        args: vec!["#museun"],
-                        data: "",
-                    },
-                },
-            ),
-        ];
-
-        for (input, expected) in inputs {
-            assert_eq!(IrcMessage::parse(&input).unwrap(), *expected);
-        }
+            },
+            data: data.to_string(),
+            badges: self.tags.badges_iter().collect(),
+            emotes: self.tags.emotes_iter().collect(),
+            tags: self.tags.clone(),
+            color: self.tags.get("color").map(Color::from).unwrap_or_default(),
+            custom_color: colors.get(userid).cloned(),
+            is_action,
+        };
+        Some(msg)
     }
 }

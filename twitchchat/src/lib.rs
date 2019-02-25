@@ -1,13 +1,33 @@
-mod args; // simple args parsing
-mod badge; // twitch badges
-mod color; // twitch colors (rgb 24-bit)
-mod emote; // emote parsing
-mod message; // twitch message
-mod tags; // twitch tags
-
+mod args;
 pub use self::args::Args;
-pub use self::badge::Badge;
-pub use self::color::{Color, TwitchColor};
-pub use self::emote::Emote;
-pub use self::message::Message;
-pub use self::tags::Tags;
+
+mod config;
+pub use self::config::{Configurable, Error as ConfigError, Saveable};
+
+mod color;
+mod message;
+mod tags;
+
+pub mod types {
+    pub use super::{
+        color::{Color, TwitchColor, HSL},
+        message::{Message, Version},
+        tags::{Badge, Emote, Tags},
+    };
+}
+
+#[macro_export]
+macro_rules! check {
+    ($e:expr, $reason:expr) => {
+        match $e {
+            Ok(ok) => ok,
+            Err(err)=> {
+                error!("error: {}. {}", err, $reason);
+                std::process::exit(1);
+            }
+        }
+    };
+    ($e:expr, $f:expr, $($args:expr),*) =>{
+        check!($e, format_args!($f, $($args),*))
+    };
+}

@@ -1,4 +1,4 @@
-use log::debug;
+use log::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -6,7 +6,7 @@ use std::fmt;
 pub struct Color(pub u8, pub u8, pub u8);
 
 impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Color(r, g, b) = self;
         write!(f, "#{:02X}{:02X}{:02X}", r, g, b)
     }
@@ -31,18 +31,18 @@ impl<'a> From<&'a str> for Color {
             (Some('#'), 7) => &s[1..],
             (.., 6) => s,
             _ => {
-                debug!("invalid color '{}' defaulting", s);
+                trace!("invalid color '{}' defaulting", s);
                 return Self::default();
             }
         };
 
         u32::from_str_radix(&s, 16)
             .and_then(|s| {
-                Ok(Color {
-                    0: ((s >> 16) & 0xFF) as u8,
-                    1: ((s >> 8) & 0xFF) as u8,
-                    2: (s & 0xFF) as u8,
-                })
+                Ok(Color(
+                    ((s >> 16) & 0xFF) as u8,
+                    ((s >> 8) & 0xFF) as u8,
+                    (s & 0xFF) as u8,
+                ))
             })
             .unwrap_or_default()
     }
@@ -68,8 +68,10 @@ pub enum TwitchColor {
     Turbo(Color),
 }
 
+#[cfg(test)]
+
 impl fmt::Display for TwitchColor {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::TwitchColor::*;
 
         match self {
@@ -143,25 +145,25 @@ const fn colors() -> [(TwitchColor, Color); 15] {
     use self::TwitchColor::*;
     [
         (Blue, Color(0x00, 0x00, 0xFF)),
-        (BlueViolet, Color(0xFF, 0x7F, 0x50)),
-        (CadetBlue, Color(0x1E, 0x90, 0xFF)),
-        (Chocolate, Color(0x00, 0xFF, 0x7F)),
-        (Coral, Color(0x9A, 0xCD, 0x32)),
-        (DodgerBlue, Color(0x00, 0x80, 0x00)),
-        (Firebrick, Color(0xFF, 0x45, 0x00)),
-        (GoldenRod, Color(0xFF, 0x00, 0x00)),
-        (Green, Color(0xDA, 0xA5, 0x20)),
+        (BlueViolet, Color(0x8A, 0x2B, 0xE2)),
+        (CadetBlue, Color(0x5F, 0x9E, 0xA0)),
+        (Chocolate, Color(0xD2, 0x69, 0x1E)),
+        (Coral, Color(0xFF, 0x7F, 0x50)),
+        (DodgerBlue, Color(0x1E, 0x90, 0xFF)),
+        (Firebrick, Color(0xB2, 0x22, 0x22)),
+        (GoldenRod, Color(0xDA, 0xA5, 0x20)),
+        (Green, Color(0x00, 0x80, 0x00)),
         (HotPink, Color(0xFF, 0x69, 0xB4)),
-        (OrangeRed, Color(0x5F, 0x9E, 0xA0)),
-        (Red, Color(0x2E, 0x8B, 0x57)),
-        (SeaGreen, Color(0xD2, 0x69, 0x1E)),
-        (SpringGreen, Color(0x8A, 0x2B, 0xE2)),
-        (YellowGreen, Color(0xB2, 0x22, 0x22)),
+        (OrangeRed, Color(0xFF, 0x45, 0x00)),
+        (Red, Color(0xFF, 0x00, 0x00)),
+        (SeaGreen, Color(0x2E, 0x8B, 0x57)),
+        (SpringGreen, Color(0x00, 0xFF, 0x7F)),
+        (YellowGreen, Color(0xAD, 0xFF, 0x2F)),
     ]
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
-pub struct HSL(f64, f64, f64); // H S L
+pub struct HSL(pub f64, pub f64, pub f64); // H S L
 
 impl From<Color> for HSL {
     fn from(Color(r, g, b): Color) -> Self {

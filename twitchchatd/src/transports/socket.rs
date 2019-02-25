@@ -1,4 +1,6 @@
-use super::*;
+use crate::queue::Queue;
+use crate::Transport;
+use twitchchat::types::Message;
 
 use std::io::{self, prelude::*};
 use std::net::{Shutdown, TcpListener, TcpStream};
@@ -108,12 +110,20 @@ impl Socket {
 }
 
 impl Transport for Socket {
-    fn send(&mut self, data: &Message) {
+    fn name(&self) -> &'static str {
+        "socket"
+    }
+
+    fn send(&mut self, data: &Message) -> Result<(), crate::Error> {
         if self.rx.is_full() {
             trace!("buffer full, dropping one");
-            self.rx.recv().unwrap(); // TODO handle this
+            self.rx
+                .recv()
+                .map_err(|_| crate::Error::Send(self.name()))?;
         }
         // expensive..
-        self.tx.send(data.clone()).unwrap(); // TODO handle this
+        self.tx
+            .send(data.clone())
+            .map_err(|_| crate::Error::Send(self.name()))
     }
 }

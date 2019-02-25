@@ -1,4 +1,5 @@
-use super::*;
+use crate::Transport;
+use twitchchat::types::Message;
 
 use std::fs::File as RFile;
 use std::io::prelude::*;

@@ -1,57 +1,47 @@
-use log::{error, info, trace, warn};
-use std::fmt;
+pub mod client;
+pub mod colorconfig;
+pub mod dispatcher;
+pub mod ircmessage;
+pub mod queue;
+pub mod transports;
 
-macro_rules! import {
-    ($($arg:ident),*) => {
-        $(
-            pub mod $arg;
-            pub use self::$arg::*;
-        )*
-    };
-}
+use twitchchat::types::Message;
 
-import!(
-    ircmessage, //
-    mockconn,   //
-    options,    //
-    server,     //
-    tcpconn,    //
-    queue,      //
-    transports, //
-    custom      //
-);
-
-pub(crate) use twitchchat::*;
-
-// TODO this should return an error
-pub trait Transport: Send {
-    fn send(&mut self, data: &Message);
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Maybe {
-    Just(String),
-    Nothing,
-}
-
-pub trait Conn {
-    fn try_read(&mut self) -> Option<Maybe>;
-    fn write(&mut self, data: &str) -> Result<usize, Error>;
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Error {
-    CannotWrite,
-    CannotConnect,
+    Connect(std::io::Error),
+    Write(std::io::Error),
+    Read(std::io::Error),
+    Capabilities,       // TODO provide context
+    Send(&'static str), // TODO provide context
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::CannotWrite => write!(f, "cannot write"),
-            Error::CannotConnect => write!(f, "cannot connect"),
+            Error::Connect(err) => write!(f, "cannot connect: {}", err),
+            Error::Write(err) => write!(f, "cannot write: {}", err),
+            Error::Read(err) => write!(f, "cannot read: {}", err),
+            Error::Capabilities => write!(f, "invalid capabilities"),
+            Error::Send(transport) => write!(f, "cannot send to transport '{}'", transport),
         }
     }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::Connect(err) | Error::Write(err) | Error::Read(err) => {
+                Some(err as &(dyn std::error::Error))
+            }
+            _ => None,
+        }
+    }
+}
+
+pub trait Transport: Send {
+    fn name(&self) -> &'static str;
+    fn send(&mut self, data: &Message) -> Result<(), Error>;
 }
 
 pub(crate) fn make_timestamp() -> u64 {

@@ -2,15 +2,23 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum Error {
-    CannotConnect,
-    CannotRead,
+    Connect(std::io::Error),
+    Read(std::io::Error),
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::Connect(err) | Error::Read(err) => Some(err as &(dyn std::error::Error)),
+        }
+    }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::CannotConnect => write!(f, "cannot connect"),
-            Error::CannotRead => write!(f, "cannot read"),
+            Error::Connect(err) => write!(f, "cannot connect: {}", err),
+            Error::Read(err) => write!(f, "cannot read: {}", err),
         }
     }
 }
