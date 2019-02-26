@@ -75,7 +75,7 @@ impl Socket {
 
                     // TODO: this should probably still be a park and not a yield
                     // TODO: look into crossbeams backup and/or parker
-                    thread::yield_now()
+                    thread::park_timeout(std::time::Duration::from_millis(100))
                 }
 
                 'drain: for client in clients.drain(..) {
