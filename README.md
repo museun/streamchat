@@ -28,7 +28,7 @@ nick = 'museun'
 key | value
 --- | ---
 address |  the address that to listen on (tcp socket)
-oauth-token | twitch oauth token. **be sure** to include the preceeding `oauth:`
+oauth_token | twitch oauth token. **be sure** to include the preceeding `oauth:`
 limit  | how many messages to store, overridden by the `-l` flag
 channel | the twitch channel to join. overridden by the `-c` flag. **note** its `museun` (twitch naming) not `#museun` (irc naming)
 nick | the nick to authenticate with. overridden by the `n` flag
