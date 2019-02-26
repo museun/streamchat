@@ -1,47 +1,106 @@
 
-### twitchchatd
-`TWITCH_CHAT_OAUTH_TOKEN` must be set to your oauth:token from twitch<br>
-`TWITCH_CHAT_LEVEL` controls the logging verbosity: `OFF`, `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`
+## twitchchatd
 ```
 usage: twitchchatd
-  -n int            number of messages to buffer
-  -m fd             mock stream for testing clients (file.txt | stdin | -)
-  -a addr:port      address to host on
-  -c string         channel to join
-  -n string         nick to use (required)
+    -l <int>
+    -c <string>
+    -n <string>
 ```
-
-flag | description
+| flag | description |
 --- | ---
--n | this controls how many messages are stored in the backlog<br>defaults to 16
--m | this allows you to provide chat replay from a text file, or stdin
--a | tcp address to host the server on.<br>defaults to _localhost:51002_
--c | which channel to join, note # shouldn't be preprended.
--n | which nick to use, it should match the name of the oauth token<br>**and is required**
-
+-l | backlog limit to store, number of messages to keep.
+-c | channel to join
+-n | nickname to use
 ---
-
-### twitchchatc
+the configuration file is `twitchchatd.toml`
+os | location
+--- | ---
+linux-ish | `$XDG_CONFIG_HOME/museun/twitchchat`
+windows | `%APPDATA%/museun/config/twitchchat` 
+*example:*
+```
+address = 'localhost:51002'
+oauth_token = 'oauth:some_long_token'
+limit = 32
+channel = 'museun'
+nick = 'museun'
+```
+key | value
+--- | ---
+address |  the address that to listen on (tcp socket)
+oauth-token | twitch oauth token. **be sure** to include the preceeding `oauth:`
+limit  | how many messages to store, overridden by the `-l` flag
+channel | the twitch channel to join. overridden by the `-c` flag. **note** its `museun` (twitch naming) not `#museun` (irc naming)
+nick | the nick to authenticate with. overridden by the `n` flag
+---
+## twitchchatc
 ```
 usage: twitchchatc
-  -l char           left fringe character. defaults to ⤷
-  -r char           right fringe character. defaults to ⤶
-  -a addr:port      which address to connect to
-  -m int            max width of lines
-  -n int            max width of names
+    -l <string>
+    -r <string>
 ```
-
-flag | description
+| flag | description |
 --- | ---
--l | this **UTF-8** character appears in the _left-most_ column when wrapping.<br>setting it to " " will remove it
--r | this **UTF-8** character appears in the _right-most_ column when wrapping.<br>setting it to " " will remove it
--a | tcp address to connect to the daemon<br>defaults to _localhost:51002_
--m | this will hardwrap lines at _int_ - 2 (the fringes).<br>without this specified, it'll try to pick the widest width of your terminal upon start<br>if it cannot find the terminal size, it'll default to 60 (minus 2)
--n | this will truncate (and append …) names over _int_ length<br>defaults to 10
+-l | string that appears in the left most column
+-r | string that appears in the right most column
 ---
-## 'api' response json
+the configuration file is `twitchchatc.toml`
+os | location
+--- | ---
+linux-ish | `$XDG_CONFIG_HOME/museun/twitchchat`
+windows | `%APPDATA%/museun/config/twitchchat` 
+*example:*
+```
+address = 'localhost:51002'
+default_line_max = 60
+nick_max = 10
+
+[left_fringe]
+fringe = '⤷'
+color = '#0000FF'
+
+[right_fringe]
+fringe = '⤶'
+color = '#FF0000'
+```
+key | value
+--- | ---
+address |  the address that `twitchchatd` is listening on (tcp socket)
+default_line_max |  how wide the lines will be before wrapping, if it can't be determined automatically
+nick_max | how long a nick can be before truncation
+left_fringe.fringe | the fringe string, which can be override by the `-l` flag
+left_fringe.color | `#RRGGBB` color string of the fringe
+right_fringe.fringe | the fringe string, which can be override by the `-r` flag
+right_fringe.color | `#RRGGBB` color string of the fringe
+---
+## color config
+custom user colors can be done via twitch chat. using `!color #RRGGBB | RRGGBB`.
+
+its stored in `color_config.json`
+os | location
+--- | ---
+linux-ish | `$XDG_DATA_HOME/museun/twitchchat`
+windows | `%APPDATA%/museun/data/twitchchat` 
+
+it looks like this:
 ```json
 {
+  "map": {
+    "23196011": [
+      0,
+      255,
+      0
+    ]
+  }
+}
+```
+where the `map` contains `userid` : `[R, G, B]`
+
+the **userid** is the twitch user id, and the array is an array of **u8s in base 10**
+## response json
+```json
+{
+    "version": 1,
     "userid": "23196011",
     "timestamp": "1542340383311",
     "name": "museun",
@@ -102,4 +161,4 @@ refer to [Message](twitchchat/src/message.rs) for the struct definition
 to write your own clients, just open a tcp connection to `$addr:port` and read newline (**\n**) separated json (listed above) until end of stream, or you're done.<br>
 when you connect, you may get up to `$backlog` of messages, so reconnecting can be considered cheap -- you'll always receive the backlog you've not seen before.
 
-to write a different transport, look at [Socket](twitchchat/src/transports/socket.rs) and [File](twitchchat/src/transports/file.rs). they can be added into the daemon by adding their trait object into the vec on creation.
+to write a different transport, look at [Socket](twitchchat/src/transports/socket.rs). they can be added into the daemon by adding their trait object into the vec on creation.

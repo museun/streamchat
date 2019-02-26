@@ -2,13 +2,11 @@ use crate::types::{Badge, Color, Emote, Tags};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum Version {
-    V1,
-}
+pub struct Version(pub u8);
 
 impl Default for Version {
     fn default() -> Self {
-        Version::V1
+        Version(1)
     }
 }
 
