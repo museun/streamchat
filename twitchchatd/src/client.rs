@@ -2,8 +2,6 @@ use crate::colorconfig::ColorConfig;
 use crate::ircmessage::{Command, IrcMessage};
 use crate::Error;
 
-use twitchchat::Saveable;
-
 use log::*;
 use std::io::{prelude::*, BufReader};
 

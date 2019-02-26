@@ -2,7 +2,7 @@ mod args;
 pub use self::args::Args;
 
 mod config;
-pub use self::config::{Configurable, Error as ConfigError, Saveable};
+pub use self::config::{Configurable, Error as ConfigError};
 
 mod color;
 mod message;
