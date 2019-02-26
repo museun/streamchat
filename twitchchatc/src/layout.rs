@@ -84,8 +84,8 @@ impl<'a> Cell<'a> {
     }
 
     pub fn width(&self) -> usize {
-        #[allow(clippy::redundant_closure)]
         // width isn't implemented for &'a str
+        #[allow(clippy::redundant_closure)]
         self.buf.iter().map(|s| s.width()).max().unwrap_or_default()
     }
 
