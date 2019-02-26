@@ -1,3 +1,28 @@
+this consists of three components.
+a daemon, a rust client and a rust library.
+
+the daemon, `twitchchatd` connects to twitch and buffers messages. once a client connects, it sends these buffered messages to the client. this allows multiple clients to connect and get a *broadcast* style output, and allows clients to reconnect and *resume* with a back log.
+
+the client, `twitchchatc` is a rust client that connects to `twitchchatd` over a tcp socket. its meant to be used in a terminal that supports **ANSI** colors. it formats each message into a 4 column table
+
+```
+|fringe| |nick| |message| |fringe|
+```
+
+on a single line:
+```
+         |nick| |message|        
+```
+
+when wrapping, fringes are applied to the start/end of the leading/trailing lines
+```
+         |nick| |message a| |fringe|
+|fringe| |nick| |message b| |fringe|
+|fringe| |nick| |message c| |fringe|
+|fringe| |nick| |message d|         `
+```
+
+the rust library allow one to write their own client, it provides the types used by the daemon, and some other utilities.
 
 ## twitchchatd
 ```
