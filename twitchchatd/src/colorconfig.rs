@@ -1,7 +1,9 @@
 use twitchchat::types::Color;
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use log::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct ColorConfig {
@@ -35,21 +37,30 @@ impl ColorConfig {
         let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
             .expect("system to have a valid $HOME directory");
 
-        std::fs::create_dir_all(dirs.config_dir()).map_err(|err| err.to_string())?;
-        let dir = dirs.config_dir().join(COLOR_CONFIG_NAME);
+        match (|| -> Result<Self, String> {
+            std::fs::create_dir_all(dirs.data_dir()).map_err(|err| err.to_string())?;
+            let dir = dirs.data_dir().join(COLOR_CONFIG_NAME);
 
-        let json = std::fs::read_to_string(dir).map_err(|err| err.to_string())?;
-        Ok(serde_json::from_str(&json)
-            .map_err(|err| err.to_string())
-            .unwrap_or_default())
+            let json = std::fs::read_to_string(dir).map_err(|err| err.to_string())?;
+            Ok(serde_json::from_str(&json)
+                .map_err(|err| err.to_string())
+                .unwrap_or_default())
+        })() {
+            Ok(this) => Ok(this),
+            Err(_err) => {
+                debug!("creating default color config");
+                Self::default().save().expect("save default color config");
+                Self::load()
+            }
+        }
     }
 
     pub fn save(&self) -> Result<(), String> {
         let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
             .expect("system to have a valid $HOME directory");
 
-        std::fs::create_dir_all(dirs.config_dir()).map_err(|err| err.to_string())?;
-        let dir = dirs.config_dir().join(COLOR_CONFIG_NAME);
+        std::fs::create_dir_all(dirs.data_dir()).map_err(|err| err.to_string())?;
+        let dir = dirs.data_dir().join(COLOR_CONFIG_NAME);
 
         let mut fi = std::fs::File::create(dir).map_err(|err| err.to_string())?;
         serde_json::to_writer_pretty(&mut fi, &self).map_err(|err| err.to_string())

@@ -2,6 +2,7 @@ use hashbrown::HashMap;
 
 // TODO borrow the strings
 // this isn't needed
+#[derive(Default, Debug)]
 pub struct Args(pub HashMap<String, String>);
 
 impl Args {

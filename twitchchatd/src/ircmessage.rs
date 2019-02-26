@@ -1,4 +1,4 @@
-use log::{info, warn};
+use log::*;
 use twitchchat::types::{Color, Message, Tags, TwitchColor, Version};
 
 use super::colorconfig::ColorConfig;
@@ -89,16 +89,16 @@ impl IrcMessage {
     }
 
     // TODO an error instead of an option
-    pub fn try_into_msg(&self, colors: &mut ColorConfig) -> Option<Message> {
+    pub fn try_into_msg(&self, colors: &mut ColorConfig) -> Result<Message, MessageResult> {
         let (data, userid) = match (&self.command, self.tags.get("user-id")) {
             (Command::Privmsg { data, .. }, Some(id)) => (data, id),
             (_, None) => {
-                warn!("no user-id attached to message: {:?}", self); // don't use {:?} here
-                return None;
+                trace!("no user-id attached to message: {:?}", self); // don't use {:?} here
+                return Err(MessageResult::Missing(MissingType::UserId));
             }
             _ => {
-                warn!("could not convert irc message into msg: {:?}", self); // don't use {:?} here
-                return None;
+                trace!("could not convert irc message into msg: {:?}", self); // don't use {:?} here
+                return Err(MessageResult::InvalidMessageType);
             }
         };
 
@@ -139,7 +139,7 @@ impl IrcMessage {
                 Some(n) => n.into(),
                 None => {
                     warn!("name is empty");
-                    return None;
+                    return Err(MessageResult::Missing(MissingType::DisplayName));
                 }
             },
             data: data.to_string(),
@@ -150,6 +150,18 @@ impl IrcMessage {
             custom_color: colors.get(userid).cloned(),
             is_action,
         };
-        Some(msg)
+        Ok(msg)
     }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum MessageResult {
+    Missing(MissingType),
+    InvalidMessageType,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum MissingType {
+    UserId,
+    DisplayName,
 }

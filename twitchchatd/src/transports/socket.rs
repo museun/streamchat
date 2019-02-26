@@ -47,6 +47,9 @@ impl Socket {
 
             debug!("starting run loop");
             loop {
+                // TODO: this could be implemented with a barrier
+                // breaks -> .emplace or whatever
+                // start -> .take or whatever
                 'accept: loop {
                     match listener.accept() {
                         Ok((stream, addr)) => {
@@ -70,13 +73,26 @@ impl Socket {
                         break 'accept;
                     }
 
-                    // TODO spin waiting is bad, use a semaphore or something like that
-                    // clients likely won't be coming in often, so 150ms is fine
-                    thread::park_timeout(std::time::Duration::from_millis(150));
+                    // TODO: this should probably still be a park and not a yield
+                    // TODO: look into crossbeams backup and/or parker
+                    thread::yield_now()
                 }
 
                 'drain: for client in clients.drain(..) {
                     let mut client = client;
+
+                    // if we cannot write to client, mark it as dead
+                    // (e.g. skip adding it to the alive list)
+                    macro_rules! try_client {
+                        ($f:expr) => {
+                            if let Err(_err) = $f() {
+                                debug!("client appears to be disconnected: {}", client.id);
+                                let _ = client.stream.shutdown(Shutdown::Both);
+                                continue 'drain;
+                            }
+                        };
+                    }
+
                     let last = client.last;
                     for msg in queue
                         .iter()
@@ -84,18 +100,10 @@ impl Socket {
                         .filter(|(ts, _)| *ts > last)
                         .map(|(_, m)| m)
                     {
-                        if let Err(_err) = client.stream.write_all(msg.as_bytes()) {
-                            debug!("client appears to be disconnected: {}", client.id);
-                            let _ = client.stream.shutdown(Shutdown::Both);
-                            continue 'drain;
-                        }
+                        try_client!(|| client.stream.write_all(msg.as_bytes()));
                     }
 
-                    if let Err(_err) = client.stream.flush() {
-                        debug!("client appears to be disconnected: {}", client.id);
-                        let _ = client.stream.shutdown(Shutdown::Both);
-                        continue 'drain;
-                    }
+                    try_client!(|| client.stream.flush());
 
                     client.last = crate::make_timestamp();
                     alive.push(client)

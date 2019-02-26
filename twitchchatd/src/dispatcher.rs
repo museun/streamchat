@@ -15,11 +15,13 @@ impl<'a, S: Stream> Dispatcher<'a, S> {
 
     pub fn run(self) {
         debug!("starting listener loop");
-        for Event::Privmsg(msg) in self.client {
-            for transport in self.transports.iter_mut() {
-                if let Err(err) = transport.send(&msg) {
-                    // TODO maybe a collate errors to remove "bad" transports
-                    warn!("cannot send to transport: {} -> {}", transport.name(), err)
+        for msg in self.client {
+            if let Event::Privmsg(msg) = msg {
+                for transport in self.transports.iter_mut() {
+                    if let Err(err) = transport.send(&msg) {
+                        // TODO maybe a collate errors to remove "bad" transports
+                        warn!("cannot send to transport: {} -> {}", transport.name(), err)
+                    }
                 }
             }
         }

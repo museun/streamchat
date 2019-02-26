@@ -39,6 +39,8 @@ impl std::error::Error for Error {
     }
 }
 
+// Message should probably be an Arc<Message> rather than a &T thats getting
+// cloned
 pub trait Transport: Send {
     fn name(&self) -> &'static str;
     fn send(&mut self, data: &Message) -> Result<(), Error>;

@@ -123,6 +123,7 @@ impl<S: Stream> IntoIterator for Client<S> {
 // maybe clear msg
 pub enum Event {
     Privmsg(super::Message),
+    Other(IrcMessage),
 }
 
 pub struct ClientIter<S: Stream>(Client<S>);
@@ -136,7 +137,13 @@ impl<S: Stream> Iterator for ClientIter<S> {
             .map_err(|err| error!("cannot read message: {}", err))
             .ok()?;
 
-        msg.try_into_msg(&mut self.0.colors)
-            .and_then(|msg| Some(Event::Privmsg(msg)))
+        use crate::ircmessage::{MessageResult::*, MissingType::*};
+
+        match msg.try_into_msg(&mut self.0.colors) {
+            Ok(msg) => Some(Event::Privmsg(msg)),
+            Err(Missing(UserId)) | Err(Missing(DisplayName)) | Err(InvalidMessageType) => {
+                Some(Event::Other(msg))
+            }
+        }
     }
 }

@@ -27,6 +27,7 @@ impl Default for Color {
 
 impl<'a> From<&'a str> for Color {
     fn from(s: &'a str) -> Self {
+        let s = s.trim();
         let s = match (s.chars().next(), s.len()) {
             (Some('#'), 7) => &s[1..],
             (.., 6) => s,
@@ -45,6 +46,12 @@ impl<'a> From<&'a str> for Color {
                 ))
             })
             .unwrap_or_default()
+    }
+}
+
+impl From<String> for Color {
+    fn from(s: String) -> Self {
+        s.as_str().into()
     }
 }
 

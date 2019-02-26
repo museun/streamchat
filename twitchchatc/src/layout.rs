@@ -10,7 +10,7 @@ use unicode_width::UnicodeWidthStr;
 pub fn bounding<'a>(
     start: FixedCell<'a>,
     end: FixedCell<'a>,
-    nick: Cell<'a>,
+    nick: TruncateCell<'a>,
     width: usize,
     data: &'a str,
 ) -> Bounding<'a> {
@@ -25,7 +25,7 @@ pub fn bounding<'a>(
 pub fn bounding_with_color<'a>(
     start: FixedCell<'a>,
     end: FixedCell<'a>,
-    nick: Cell<'a>,
+    nick: TruncateCell<'a>,
     width: usize,
     data: &'a str,
     color: impl Into<Color>,
@@ -102,9 +102,52 @@ impl<'a> Cell<'a> {
     }
 }
 
-pub type Nick<'a> = Cell<'a>;
+pub type Nick<'a> = TruncateCell<'a>;
 
 pub type Fringe<'a> = FixedCell<'a>;
+
+#[derive(Debug, Clone)]
+pub struct TruncateCell<'a> {
+    size: usize,
+    ch: char,
+    name: Cow<'a, str>,
+    color: Color,
+}
+
+impl<'a> TruncateCell<'a> {
+    pub fn new(data: &str, limit: usize, ch: char) -> Self {
+        Self::new_with_color(data, limit, ch, Color::default())
+    }
+
+    pub fn new_with_color(data: &str, limit: usize, ch: char, color: impl Into<Color>) -> Self {
+        let s = if data.len() > limit {
+            let mut s = data[..limit - 1].to_string();
+            s.push(ch);
+            s
+        } else {
+            data.to_string()
+        };
+
+        Self {
+            size: limit,
+            ch,
+            name: Cow::from(s),
+            color: color.into(),
+        }
+    }
+
+    pub fn width(&self) -> usize {
+        self.size
+    }
+
+    pub fn display(&self) -> Cow<'a, str> {
+        self.name.clone()
+    }
+
+    pub fn color(&self) -> Color {
+        self.color
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct FixedCell<'a>(Cell<'a>);
@@ -157,17 +200,11 @@ enum State<'a> {
     Empty,
 }
 
-impl<'a> From<(Color, &'a str)> for State<'a> {
-    fn from((c, a): (Color, &'a str)) -> Self {
-        State::Show(c, a.into())
-    }
-}
-
 impl<'a> fmt::Display for State<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             State::Show(_, s) => write!(f, "{}", s),
-            State::Pad(_, s, d) => write!(f, "{:>pad$}", s, pad = d),
+            State::Pad(_, s, d) => write!(f, "{}", format!("{:>pad$}", s, pad = d)),
             State::Hide(d) => write!(f, "{:pad$}", " ", pad = d),
             State::Empty => write!(f, ""),
         }
@@ -184,7 +221,7 @@ enum ParamKind {
 struct ParamPack<'a> {
     msg: (&'a str, Color),
     start: (&'a str, layout::FixedCell<'a>),
-    nick: (&'a str, layout::Cell<'a>),
+    nick: (Cow<'a, str>, layout::TruncateCell<'a>),
     end: (&'a str, layout::FixedCell<'a>),
 }
 
@@ -192,8 +229,15 @@ impl<'a> ParamPack<'a> {
     fn show(&self, state: &mut State<'a>, kind: ParamKind) {
         match kind {
             ParamKind::Msg => *state = State::Show(self.msg.1, self.msg.0.into()),
-            ParamKind::Start => *state = (self.start.1.color(), self.start.0).into(),
-            ParamKind::Nick => *state = (self.nick.1.color(), self.nick.0).into(),
+            ParamKind::Start => *state = State::Show(self.start.1.color(), self.start.0.into()),
+            ParamKind::Nick => {
+                *state = State::Pad(
+                    self.nick.1.color(),
+                    self.nick.0.clone(),
+                    self.nick.1.width(),
+                )
+            }
+
             ParamKind::End => {
                 *state = State::Pad(self.end.1.color(), self.end.0.into(), self.end.1.width())
             }
@@ -213,7 +257,7 @@ impl<'a> ParamPack<'a> {
 #[derive(Default, Debug)]
 pub struct Bounding<'a> {
     start: Option<Fringe<'a>>,
-    nick: Option<Cell<'a>>,
+    nick: Option<TruncateCell<'a>>,
     message: Option<MessageCell<'a>>,
     end: Option<Fringe<'a>>,
 }
@@ -228,7 +272,7 @@ impl<'a> Bounding<'a> {
         self
     }
 
-    pub fn nick(mut self, item: Cell<'a>) -> Self {
+    pub fn nick(mut self, item: TruncateCell<'a>) -> Self {
         self.nick.replace(item);
         self
     }
@@ -274,7 +318,7 @@ impl<'a> Bounding<'a> {
                     (
                         len,
                         (start.display()[0], start),
-                        (nick.display()[0], nick),
+                        (nick.display(), nick),
                         (end.display()[0], end),
                     ),
                 )
@@ -329,8 +373,8 @@ impl<'a> Bounding<'a> {
             )
             .for_each(|(start, nick, msg, end, _)| {
                 let extract = |s: &State<'_>| match s {
-                    State::Show(c, s) => (*c, s.to_string()),
-                    State::Pad(c, s, _) => (*c, s.to_string()),
+                    State::Show(c, _) => (*c, s.to_string()),
+                    State::Pad(c, _, _) => (*c, s.to_string()),
                     s => (Color::default(), s.to_string()),
                 };
 
@@ -338,7 +382,7 @@ impl<'a> Bounding<'a> {
                     let (c, s) = extract(&part);
                     writer.surround(c);
                     if i < 3 {
-                        writer.write(&(s + " "))
+                        writer.write(&s)
                     } else {
                         writer.writeln(&s)
                     }
@@ -412,7 +456,11 @@ impl<'a> Writer for TermColorWriter<'a> {
     fn surround(&mut self, color: Color) {
         let Color(r, g, b) = color;
         self.buffer
-            .set_color(ColorSpec::new().set_fg(Some(termcolor::Color::Rgb(r, g, b))))
+            .set_color(
+                ColorSpec::new()
+                    .set_fg(Some(termcolor::Color::Rgb(r, g, b)))
+                    .set_intense(false),
+            )
             .unwrap()
     }
 
