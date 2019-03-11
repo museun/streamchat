@@ -5,7 +5,7 @@ pub mod ircmessage;
 pub mod queue;
 pub mod transports;
 
-use twitchchat::types::Message;
+use streamchat::types::Message;
 
 #[derive(Debug)]
 pub enum Error {

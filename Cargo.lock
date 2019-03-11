@@ -220,6 +220,45 @@ version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "streamchat"
+version = "0.1.0"
+dependencies = [
+ "directories 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hashbrown 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "streamchatc"
+version = "0.1.0"
+dependencies = [
+ "atty 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
+ "streamchat 0.1.0",
+ "term_size 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "termcolor 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-segmentation 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-width 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "streamchatd"
+version = "0.1.0"
+dependencies = [
+ "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "directories 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "env_logger 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
+ "streamchat 0.1.0",
+]
+
+[[package]]
 name = "syn"
 version = "0.15.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -271,45 +310,6 @@ version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "twitchchat"
-version = "0.1.0"
-dependencies = [
- "directories 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashbrown 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
- "toml 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "twitchchatc"
-version = "0.1.0"
-dependencies = [
- "atty 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
- "term_size 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "termcolor 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "twitchchat 0.1.0",
- "unicode-segmentation 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "unicode-width 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "twitchchatd"
-version = "0.1.0"
-dependencies = [
- "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "directories 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "env_logger 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
- "twitchchat 0.1.0",
 ]
 
 [[package]]

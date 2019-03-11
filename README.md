@@ -1,9 +1,9 @@
 this consists of three components.
 a daemon, a rust client and a rust library.
 
-the daemon, `twitchchatd` connects to twitch and buffers messages. once a client connects, it sends these buffered messages to the client. this allows multiple clients to connect and get a *broadcast* style output, and allows clients to reconnect and *resume* with a back log.
+the daemon, `streamchatd` connects to twitch and buffers messages. once a client connects, it sends these buffered messages to the client. this allows multiple clients to connect and get a *broadcast* style output, and allows clients to reconnect and *resume* with a back log.
 
-the client, `twitchchatc` is a rust client that connects to `twitchchatd` over a tcp socket. its meant to be used in a terminal that supports **ANSI** colors. it formats each message into a 4 column table
+the client, `streamchatc` is a rust client that connects to `streamchatd` over a tcp socket. its meant to be used in a terminal that supports **ANSI** colors. it formats each message into a 4 column table
 
 ```
 |fringe| |nick| |message| |fringe|
@@ -24,9 +24,9 @@ when wrapping, fringes are applied to the start/end of the leading/trailing line
 
 the rust library allow one to write their own client, it provides the types used by the daemon, and some other utilities.
 
-## twitchchatd
+## streamchatd
 ```
-usage: twitchchatd
+usage: streamchatd
     -l <int>
     -c <string>
     -n <string>
@@ -37,11 +37,11 @@ usage: twitchchatd
 -c | channel to join
 -n | nickname to use
 ---
-the configuration file is `twitchchatd.toml`
+the configuration file is `streamchatd.toml`
 os | location
 --- | ---
-linux-ish | `$XDG_CONFIG_HOME/museun/twitchchat`
-windows | `%APPDATA%/museun/config/twitchchat` 
+linux-ish | `$XDG_CONFIG_HOME/museun/streamchat`
+windows | `%APPDATA%/museun/config/streamchat` 
 *example:*
 ```
 address = 'localhost:51002'
@@ -58,9 +58,9 @@ limit  | how many messages to store, overridden by the `-l` flag
 channel | the twitch channel to join. overridden by the `-c` flag. **note** its `museun` (twitch naming) not `#museun` (irc naming)
 nick | the nick to authenticate with. overridden by the `n` flag
 ---
-## twitchchatc
+## streamchatc
 ```
-usage: twitchchatc
+usage: streamchatc
     -l <string>
     -r <string>
 ```
@@ -69,11 +69,11 @@ usage: twitchchatc
 -l | string that appears in the left most column
 -r | string that appears in the right most column
 ---
-the configuration file is `twitchchatc.toml`
+the configuration file is `streamchatc.toml`
 os | location
 --- | ---
-linux-ish | `$XDG_CONFIG_HOME/museun/twitchchat`
-windows | `%APPDATA%/museun/config/twitchchat` 
+linux-ish | `$XDG_CONFIG_HOME/museun/streamchat`
+windows | `%APPDATA%/museun/config/streamchat` 
 *example:*
 ```
 address = 'localhost:51002'
@@ -90,7 +90,7 @@ color = '#FF0000'
 ```
 key | value
 --- | ---
-address |  the address that `twitchchatd` is listening on (tcp socket)
+address |  the address that `streamchatd` is listening on (tcp socket)
 default_line_max |  how wide the lines will be before wrapping, if it can't be determined automatically
 nick_max | how long a nick can be before truncation
 left_fringe.fringe | the fringe string, which can be override by the `-l` flag
@@ -104,8 +104,8 @@ custom user colors can be done via twitch chat. using `!color #RRGGBB | RRGGBB`.
 its stored in `color_config.json`
 os | location
 --- | ---
-linux-ish | `$XDG_DATA_HOME/museun/twitchchat`
-windows | `%APPDATA%/museun/data/twitchchat` 
+linux-ish | `$XDG_DATA_HOME/museun/streamchat`
+windows | `%APPDATA%/museun/data/streamchat` 
 
 it looks like this:
 ```json
@@ -181,9 +181,9 @@ the **userid** is the twitch user id, and the array is an array of **u8s in base
     }
 }
 ```
-refer to [Message](twitchchat/src/message.rs) for the struct definition
+refer to [Message](streamchat/src/message.rs) for the struct definition
 
 to write your own clients, just open a tcp connection to `$addr:port` and read newline (**\n**) separated json (listed above) until end of stream, or you're done.<br>
 when you connect, you may get up to `$backlog` of messages, so reconnecting can be considered cheap -- you'll always receive the backlog you've not seen before.
 
-to write a different transport, look at [Socket](twitchchat/src/transports/socket.rs). they can be added into the daemon by adding their trait object into the vec on creation.
+to write a different transport, look at [Socket](streamchat/src/transports/socket.rs). they can be added into the daemon by adding their trait object into the vec on creation.

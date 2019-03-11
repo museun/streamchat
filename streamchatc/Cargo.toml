@@ -1,14 +1,16 @@
 [package]
-name = "twitchchatd"
+name = "streamchatc"
 version = "0.1.0"
 authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-twitchchat = { path = "../twitchchat" }
+streamchat = { path = "../streamchat" }
 log = "0.4.6"
-env_logger = "0.6.0"
-directories = "1.0.2"
+termcolor = "1.0.4"
+atty = "0.2.11"
+term_size = "0.3.1"
 serde = { version = "1.0.88", features = ["derive"] }
 serde_json = "1.0.38"
-crossbeam-channel = "0.3.8"
+unicode-segmentation = "1.2.1"
+unicode-width = "0.1.5"

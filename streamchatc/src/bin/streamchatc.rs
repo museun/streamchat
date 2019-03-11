@@ -1,10 +1,10 @@
-use twitchchat::types::Message;
-use twitchchat::{
+use streamchat::types::Message;
+use streamchat::{
     check,
     {ConfigError, Configurable},
 };
-use twitchchatc::error::Error;
-use twitchchatc::layout::Fringe as LayoutFringe;
+use streamchatc::error::Error;
+use streamchatc::layout::Fringe as LayoutFringe;
 
 use std::env;
 use std::io::{prelude::*, BufReader};
@@ -50,7 +50,7 @@ impl Default for Config {
 
 impl Configurable for Config {
     fn name() -> &'static str {
-        "twitchchatc.toml"
+        "streamchatc.toml"
     }
 }
 
@@ -71,7 +71,7 @@ fn main() {
     };
 
     let args = env::args().skip(1).collect::<Vec<_>>();
-    let args = match twitchchat::Args::parse(&args) {
+    let args = match streamchat::Args::parse(&args) {
         Some(args) => args,
         None => std::process::exit(1),
     };
@@ -101,7 +101,7 @@ fn connect(
     color: bool,
     (left, right): (LayoutFringe<'_>, LayoutFringe<'_>),
 ) -> Result<(), Error> {
-    use twitchchatc::layout::*;
+    use streamchatc::layout::*;
 
     let writer = BufferWriter::stdout(if color {
         ColorChoice::Always

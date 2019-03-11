@@ -38,13 +38,13 @@ pub trait Configurable: Default + serde::Serialize + serde::de::DeserializeOwned
     fn name() -> &'static str;
 
     fn dir() -> PathBuf {
-        let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
+        let dirs = directories::ProjectDirs::from("com.github", "museun", "streamchat")
             .expect("system to have a valid $HOME directory");
         dirs.config_dir().join(Self::name())
     }
 
     fn load() -> Result<Self, Error> {
-        let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
+        let dirs = directories::ProjectDirs::from("com.github", "museun", "streamchat")
             .expect("system to have a valid $HOME directory");
 
         std::fs::create_dir_all(dirs.config_dir())?;
@@ -58,7 +58,7 @@ pub trait Configurable: Default + serde::Serialize + serde::de::DeserializeOwned
     }
 
     fn save(&self) -> Result<(), Error> {
-        let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
+        let dirs = directories::ProjectDirs::from("com.github", "museun", "streamchat")
             .expect("system to have a valid $HOME directory");
 
         std::fs::create_dir_all(dirs.config_dir())?;

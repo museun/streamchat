@@ -1,6 +1,6 @@
 use crate::queue::Queue;
 use crate::Transport;
-use twitchchat::types::Message;
+use streamchat::types::Message;
 
 use std::io::{self, prelude::*};
 use std::net::{Shutdown, TcpListener, TcpStream};

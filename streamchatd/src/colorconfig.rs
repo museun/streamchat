@@ -1,4 +1,4 @@
-use twitchchat::types::Color;
+use streamchat::types::Color;
 
 use std::collections::HashMap;
 
@@ -10,7 +10,7 @@ pub struct ColorConfig {
     map: HashMap<String, Color>,
 }
 
-const COLOR_CONFIG_NAME: &str = "twitchchat_colors.json";
+const COLOR_CONFIG_NAME: &str = "streamchat_colors.json";
 
 impl ColorConfig {
     pub fn get(&self, id: &str) -> Option<&Color> {
@@ -34,7 +34,7 @@ impl ColorConfig {
 
 impl ColorConfig {
     pub fn load() -> Result<Self, String> {
-        let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
+        let dirs = directories::ProjectDirs::from("com.github", "museun", "streamchat")
             .expect("system to have a valid $HOME directory");
 
         match (|| -> Result<Self, String> {
@@ -56,7 +56,7 @@ impl ColorConfig {
     }
 
     pub fn save(&self) -> Result<(), String> {
-        let dirs = directories::ProjectDirs::from("com.github", "museun", "twitchchat")
+        let dirs = directories::ProjectDirs::from("com.github", "museun", "streamchat")
             .expect("system to have a valid $HOME directory");
 
         std::fs::create_dir_all(dirs.data_dir()).map_err(|err| err.to_string())?;

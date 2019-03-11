@@ -1,8 +1,8 @@
-use twitchchat::{check, Args, ConfigError, Configurable};
-use twitchchatd::client::{Client, ClientConfig};
-use twitchchatd::dispatcher::Dispatcher;
-use twitchchatd::transports::*;
-use twitchchatd::Transport;
+use streamchat::{check, Args, ConfigError, Configurable};
+use streamchatd::client::{Client, ClientConfig};
+use streamchatd::dispatcher::Dispatcher;
+use streamchatd::transports::*;
+use streamchatd::Transport;
 
 use log::*;
 use std::env;
@@ -36,7 +36,7 @@ impl Default for Config {
 
 impl Configurable for Config {
     fn name() -> &'static str {
-        "twitchchatd.toml"
+        "streamchatd.toml"
     }
 }
 

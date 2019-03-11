@@ -1,5 +1,5 @@
 use log::*;
-use twitchchat::types::{Color, Message, Tags, TwitchColor, Version};
+use streamchat::types::{Color, Message, Tags, TwitchColor, Version};
 
 use super::colorconfig::ColorConfig;
 
