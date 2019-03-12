@@ -198,9 +198,16 @@ impl<R: Read, W: Write> Service<R, W> {
     fn dispatch(&mut self, msg: Message) {
         for transport in self.transports.iter_mut() {
             trace!("sending to a transport");
+
             if let Err(err) = transport.send(msg.clone()) {
-                error!("cannot write to transport: {}", err);
-                // do we exit here?
+                if let Some(transports::WsError::RestartRequired) =
+                    err.downcast_ref::<transports::WsError>()
+                {
+                    warn!("ws server must be restarted");
+                    warn!("not doing it now.")
+                } else {
+                    error!("cannot write to transport: {}", err);
+                }
             }
         }
     }
@@ -287,7 +294,7 @@ impl CommandProcessor {
 }
 
 // TODO oauth implicit flow grant
-
+// TODO make the transport selectable (e.g. provide a trait for this)
 fn main() {
     let config = match Config::load() {
         Ok(config) => config,
@@ -296,6 +303,23 @@ fn main() {
             eprintln!("creating default config.");
             eprintln!("look for it at {}", dir.to_string_lossy());
             Config::default().save().expect("save new config");
+            std::process::exit(2)
+        }
+        Err(err) => {
+            eprintln!("cannot load config: {}", err);
+            std::process::exit(1)
+        }
+    };
+
+    let wsconfig = match transports::WsConfig::load() {
+        Ok(config) => config,
+        Err(Error::Read(..)) => {
+            let dir = transports::WsConfig::dir(); // this is probably not the right thing to do
+            eprintln!("creating default websocket config.");
+            eprintln!("look for it at {}", dir.to_string_lossy());
+            transports::WsConfig::default()
+                .save()
+                .expect("save new config");
             std::process::exit(2)
         }
         Err(err) => {
@@ -386,8 +410,19 @@ fn main() {
     let mut processor = CommandProcessor::default();
     processor.add("color", handle_color);
 
+    let ws = match transports::WebsocketServer::start(wsconfig) {
+        Ok(ws) => ws,
+        Err(err) => {
+            error!("{}", err);
+            std::process::exit(3);
+        }
+    };
+
+    let socket = transports::Socket::start(&config.address, limit);
+
     let transports: Vec<Box<dyn Transport>> = vec![
-        Box::new(transports::Socket::start(&config.address, limit)), // socket transport
+        Box::new(socket), // socket transport
+        Box::new(ws),     // websocket transport
     ];
 
     if let Err(err) = Service::new(client, transports, processor).run() {
