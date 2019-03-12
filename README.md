@@ -1,5 +1,7 @@
-this consists of three components.
-a daemon, a rust client and a rust library.
+this consists of two components.
+
+* a daemon, _streamchatd_
+* a rust client, _streamchatc_ that connects via **tcp**, and prints to its **tty**
 
 the daemon, `streamchatd` connects to twitch and buffers messages. once a client connects, it sends these buffered messages to the client. this allows multiple clients to connect and get a *broadcast* style output, and allows clients to reconnect and *resume* with a back log.
 
@@ -99,7 +101,9 @@ right_fringe.fringe | the fringe string, which can be override by the `-r` flag
 right_fringe.color | `#RRGGBB` color string of the fringe
 ---
 ## color config
-custom user colors can be done via twitch chat. using `!color #RRGGBB | RRGGBB`.
+* custom user colors can be done via twitch chat. using `!color #RRGGBB | RRGGBB`.
+* users can reset their colors simply by doing `!color`
+* the color format for this command is `#RRGGBB` or `RRGGBB` or one of Twitch's named colors. See this enum [twitchchat](https://github.com/museun/twitchchat/blob/9cda6169f3460714ec97db250b9e10124d455e07/src/twitch/color.rs#L89).
 
 its stored in `color_config.json`
 os | location
@@ -109,81 +113,72 @@ windows | `%APPDATA%/museun/data/streamchat`
 
 it looks like this:
 ```json
-{
-  "map": {
+{  
     "23196011": [
-      0,
-      255,
-      0
-    ]
-  }
+        0,
+        255,
+        0
+    ] 
 }
 ```
-where the `map` contains `userid` : `[R, G, B]`
+where each object is `userid` : `[R, G, B]`
 
 the **userid** is the twitch user id, and the array is an array of **u8s in base 10**
 ## response json
 ```json
 {
-    "version": 1,
-    "userid": "23196011",
-    "timestamp": "1542340383311",
-    "name": "museun",
-    "data": "Kappa Kappa VoHiYo",
-    "color": {
-        "r": 255,
-        "g": 69,
-        "b": 0
-    },
-    "is_action": false,
-    "badges": [
-        "Broadcaster"
-    ],
-    "emotes": [
-        {
-            "ranges": [
-                {
-                    "start": 0,
-                    "end": 4
-                },
-                {
-                    "start": 6,
-                    "end": 10
-                }
-            ],
-            "id": 25
-        },
-        {
-            "ranges": [
-                {
-                    "start": 12,
-                    "end": 17
-                }
-            ],
-            "id": 81274
-        }
-    ],
-    "tags": {
-        "room-id": "23196011",
-        "flags": "",
-        "emotes": "25:0-4,6-10/81274:12-17",
-        "mod": "0",
-        "badges": "broadcaster/1",
-        "subscriber": "0",
-        "emote-only": "1",
-        "display-name": "museun",
-        "user-type": "",
-        "id": "1b446a16-696d-4603-9f55-f67acbf3021e",
-        "user-id": "23196011",
-        "turbo": "0",
-        "color": "#FF4500",
-        "tmi-sent-ts": "1542340383153"
+  "version": 1,
+  "userid": "23196011",
+  "timestamp": "1552369599356",
+  "name": "museun",
+  "data": "need a test example Kappa",
+  "color": "OrangeRed",
+  "custom_color": {
+    "Turbo": [
+      221,
+      160,
+      221
+    ]
+  },
+  "is_action": false,
+  "badges": [
+    {
+      "kind": "Broadcaster",
+      "data": "1"
     }
+  ],
+  "emotes": [
+    {
+      "id": 25,
+      "ranges": [
+        {
+          "start": 20,
+          "end": 24
+        }
+      ]
+    }
+  ],
+  "tags": {
+    "user-id": "23196011",
+    "turbo": "0",
+    "flags": "",
+    "emotes": "25:20-24",
+    "mod": "0",
+    "room-id": "23196011",
+    "tmi-sent-ts": "1552369599175",
+    "id": "74f2fde6-6ab7-40fb-b7fa-3f2cb44577a8",
+    "badges": "broadcaster/1",
+    "color": "#FF4500",
+    "display-name": "museun",
+    "user-type": "",
+    "subscriber": "0"
+  }
 }
 ```
-refer to [Message](streamchat/src/message.rs) for the struct definition
+refer to [Message](src/message.rs) for the struct definition, it uses some types from [twitchchat](https://docs.rs/twitchchat/0.1.0/twitchchat/twitch/index.html)
 
-to write your own clients, just open a tcp connection to `$addr:port` and read newline (**\n**) separated json (listed above) until end of stream, or you're done.<br>
+to write your own clients, just open a tcp connection to `$addr:port` and read newline (**\n**) separated json (listed above) until end of stream, or you're done.
+
 when you connect, you may get up to `$backlog` of messages, so reconnecting can be considered cheap -- you'll always receive the backlog you've not seen before.
 
-to write a different transport, look at [Socket](streamchat/src/transports/socket.rs). they can be added into the daemon by adding their trait object into the vec on creation.
+to write a different transport, look at [Socket](src/transports/socket.rs). they can be added into the daemon by adding their trait object into the vec on creation.
