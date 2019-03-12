@@ -8,7 +8,7 @@ mod config;
 pub use config::Configurable;
 
 mod message;
-pub use self::message::Message;
+pub use self::message::{Message, Version};
 
 pub mod layout;
 
@@ -60,25 +60,10 @@ pub trait Transport: Send {
     fn send(&mut self, data: message::Message) -> Result<(), Box<std::error::Error>>;
 }
 
-pub(crate) fn make_timestamp() -> u64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    ts.as_millis() as u64
-    //ts.as_secs() * 1000 + u64::from(ts.subsec_nanos()) / 1_000_000
-}
-
-#[macro_export]
-macro_rules! check {
-    ($e:expr, $reason:expr) => {
-        match $e {
-            Ok(ok) => ok,
-            Err(err)=> {
-                error!("error: {}. {}", err, $reason);
-                std::process::exit(1);
-            }
-        }
-    };
-    ($e:expr, $f:expr, $($args:expr),*) =>{
-        check!($e, format_args!($f, $($args),*))
-    };
+#[inline]
+pub fn make_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64
 }

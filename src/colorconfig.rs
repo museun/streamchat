@@ -1,32 +1,25 @@
 use hashbrown::HashMap;
 use log::*;
 use serde::{Deserialize, Serialize};
-
 use twitchchat::twitch::RGB;
-
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct ColorConfig {
-    map: HashMap<String, RGB>,
-}
 
 const COLOR_CONFIG_NAME: &str = "streamchat_colors.json";
 
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct ColorConfig(HashMap<u64, RGB>);
+
 impl ColorConfig {
-    pub fn get(&self, id: &str) -> Option<&RGB> {
-        self.map.get(id)
+    pub fn get(&self, id: u64) -> Option<RGB> {
+        self.0.get(&id).cloned()
     }
 
-    pub fn set<S, C>(&mut self, id: S, color: C) -> Result<(), String>
-    where
-        S: ToString,
-        C: Into<RGB>,
-    {
-        self.map.insert(id.to_string(), color.into());
+    pub fn set<C: Into<RGB>>(&mut self, id: u64, color: C) -> Result<(), String> {
+        self.0.insert(id, color.into());
         self.save()
     }
 
-    pub fn remove(&mut self, id: &str) -> Result<(), String> {
-        self.map.remove(id);
+    pub fn remove(&mut self, id: u64) -> Result<(), String> {
+        self.0.remove(&id);
         self.save()
     }
 }
@@ -37,13 +30,15 @@ impl ColorConfig {
             .expect("system to have a valid $HOME directory");
 
         match (|| -> Result<Self, String> {
-            std::fs::create_dir_all(dirs.data_dir()).map_err(|err| err.to_string())?;
-            let dir = dirs.data_dir().join(COLOR_CONFIG_NAME);
-
-            let json = std::fs::read_to_string(dir).map_err(|err| err.to_string())?;
-            Ok(serde_json::from_str(&json)
+            use std::fs::{create_dir_all, read_to_string};
+            create_dir_all(dirs.data_dir()).map_err(|err| err.to_string())?;
+            read_to_string(dirs.data_dir().join(COLOR_CONFIG_NAME))
                 .map_err(|err| err.to_string())
-                .unwrap_or_default())
+                .map(|json| {
+                    serde_json::from_str(&json)
+                        .map_err(|err| err.to_string())
+                        .unwrap_or_default()
+                })
         })() {
             Ok(this) => Ok(this),
             Err(_err) => {
