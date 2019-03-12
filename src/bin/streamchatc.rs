@@ -1,19 +1,11 @@
-use streamchat::types::Message;
-use streamchat::{
-    check,
-    {ConfigError, Configurable},
-};
-use streamchatc::error::Error;
-use streamchatc::layout::Fringe as LayoutFringe;
-
 use std::env;
 use std::io::{prelude::*, BufReader};
 use std::net::TcpStream;
 
-use log::*;
-
 use serde::{Deserialize, Serialize};
 use termcolor::{BufferWriter, ColorChoice};
+
+use streamchat::{layout, Args, Configurable, Error, Message};
 
 #[derive(Default, Debug, Deserialize, Serialize)]
 struct Fringe {
@@ -57,7 +49,7 @@ impl Configurable for Config {
 fn main() {
     let config = match Config::load() {
         Ok(config) => config,
-        Err(ConfigError::Io(..)) => {
+        Err(Error::Read(..)) => {
             let dir = Config::dir(); // this is probably not the right thing to do
             eprintln!("creating default config.");
             eprintln!("look for it at {}", dir.to_string_lossy());
@@ -71,7 +63,7 @@ fn main() {
     };
 
     let args = env::args().skip(1).collect::<Vec<_>>();
-    let args = match streamchat::Args::parse(&args) {
+    let args = match Args::parse(&args) {
         Some(args) => args,
         None => std::process::exit(1),
     };
@@ -79,11 +71,11 @@ fn main() {
     let left = args.get("-l", &config.left_fringe.fringe);
     let right = args.get("-r", &config.right_fringe.fringe);
 
-    let left = if left.is_empty() { " ".into() } else { left };
-    let right = if right.is_empty() { " ".into() } else { right };
+    let left = if left.is_empty() { " " } else { &left };
+    let right = if right.is_empty() { " " } else { &right };
 
-    let left = LayoutFringe::new_with_color(&left, config.left_fringe.color.clone());
-    let right = LayoutFringe::new_with_color(&right, config.right_fringe.color.clone());
+    let left = layout::Fringe::new_with_color(&left, config.left_fringe.color.clone());
+    let right = layout::Fringe::new_with_color(&right, config.right_fringe.color.clone());
 
     let color = env::var("NO_COLOR").is_err();
 
@@ -92,17 +84,18 @@ fn main() {
         .unwrap_or_else(|| config.default_line_max)
         - config.nick_max;
 
-    check!(connect(config, max, color, (left, right)), "cannot connect");
+    if let Err(err) = connect(config, max, color, (left, right)) {
+        eprintln!("cannot connect: {}", err);
+        std::process::exit(1);
+    }
 }
 
 fn connect(
     config: Config,
     max: usize,
     color: bool,
-    (left, right): (LayoutFringe<'_>, LayoutFringe<'_>),
+    (left, right): (layout::Fringe<'_>, layout::Fringe<'_>),
 ) -> Result<(), Error> {
-    use streamchatc::layout::*;
-
     let writer = BufferWriter::stdout(if color {
         ColorChoice::Always
     } else {
@@ -121,14 +114,14 @@ fn connect(
         };
 
         let mut buffer = writer.buffer();
-        bounding(
+        layout::bounding(
             left.clone(),
             right.clone(),
-            Nick::new_with_color(&msg.name, config.nick_max, '…', color),
+            layout::Nick::new_with_color(&msg.name, config.nick_max, '…', color),
             max,
             &msg.data,
         )
-        .write(&mut TermColorWriter::new(&mut buffer));
+        .write(&mut layout::TermColorWriter::new(&mut buffer));
         print!("{}", String::from_utf8(buffer.into_inner()).unwrap());
     }
 

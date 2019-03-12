@@ -1,14 +1,9 @@
-use streamchat::{check, Args, ConfigError, Configurable};
-use streamchatd::client::{Client, ClientConfig};
-use streamchatd::dispatcher::Dispatcher;
-use streamchatd::transports::*;
-use streamchatd::Transport;
+use std::env;
 
 use log::*;
-use std::env;
-use std::net::TcpStream;
-
 use serde::{Deserialize, Serialize};
+
+use streamchat::{Args, Configurable, Error};
 
 // TODO oauth implicit flow grant
 
@@ -43,7 +38,7 @@ impl Configurable for Config {
 fn main() {
     let config = match Config::load() {
         Ok(config) => config,
-        Err(ConfigError::Io(..)) => {
+        Err(Error::Read(..)) => {
             let dir = Config::dir(); // this is probably not the right thing to do
             eprintln!("creating default config.");
             eprintln!("look for it at {}", dir.to_string_lossy());
@@ -93,29 +88,29 @@ fn main() {
         })
         .init();
 
-    let (read, write) = {
-        let stream = check!(
-            TcpStream::connect("irc.chat.twitch.tv:6667"),
-            "cannot connect to twitch"
-        );
-        (stream.try_clone().unwrap(), stream)
-    };
+    // let (read, write) = {
+    //     let stream = check!(
+    //         TcpStream::connect("irc.chat.twitch.tv:6667"),
+    //         "cannot connect to twitch"
+    //     );
+    //     (stream.try_clone().unwrap(), stream)
+    // };
 
-    let mut client = Client::new(read, write);
+    // let mut client = Client::new(read, write);
 
-    check!(
-        client.register(ClientConfig {
-            token: config.oauth_token.clone(),
-            channel,
-            nick,
-        }),
-        "cannot register"
-    );
+    // check!(
+    //     client.register(ClientConfig {
+    //         token: config.oauth_token.clone(),
+    //         channel,
+    //         nick,
+    //     }),
+    //     "cannot register"
+    // );
 
-    let mut transports: &mut [&mut dyn Transport] =
-        &mut [&mut Socket::start(&config.address, limit)];
+    // let mut transports: &mut [&mut dyn Transport] =
+    //     &mut [&mut Socket::start(&config.address, limit)];
 
-    info!("starting dispatcher");
-    Dispatcher::new(client, &mut transports).run();
-    info!("exiting");
+    // info!("starting dispatcher");
+    // Dispatcher::new(client, &mut transports).run();
+    // info!("exiting");
 }

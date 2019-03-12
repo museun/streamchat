@@ -2,10 +2,7 @@
 use std::collections::VecDeque;
 
 #[derive(Debug)]
-pub struct Queue<T>
-where
-    T: std::fmt::Debug,
-{
+pub struct Queue<T> {
     data: VecDeque<T>,
     size: usize,
 }

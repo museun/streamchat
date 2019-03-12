@@ -1,4 +1,6 @@
-use crate::types::{Badge, Color, Emote, Tags};
+use twitchchat::irc::types::Tags;
+use twitchchat::twitch::{Badge, Color, Emotes};
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -10,7 +12,7 @@ impl Default for Version {
     }
 }
 
-#[derive(Default, Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Message {
     pub version: Version,
 
@@ -26,7 +28,7 @@ pub struct Message {
     pub is_action: bool,
 
     pub badges: Vec<Badge>,
-    pub emotes: Vec<Emote>,
+    pub emotes: Vec<Emotes>,
 
     pub tags: Tags,
 }

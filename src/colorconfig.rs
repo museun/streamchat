@@ -1,26 +1,25 @@
-use streamchat::types::Color;
-
-use std::collections::HashMap;
-
+use hashbrown::HashMap;
 use log::*;
 use serde::{Deserialize, Serialize};
 
+use twitchchat::twitch::RGB;
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct ColorConfig {
-    map: HashMap<String, Color>,
+    map: HashMap<String, RGB>,
 }
 
 const COLOR_CONFIG_NAME: &str = "streamchat_colors.json";
 
 impl ColorConfig {
-    pub fn get(&self, id: &str) -> Option<&Color> {
+    pub fn get(&self, id: &str) -> Option<&RGB> {
         self.map.get(id)
     }
 
     pub fn set<S, C>(&mut self, id: S, color: C) -> Result<(), String>
     where
         S: ToString,
-        C: Into<Color>,
+        C: Into<RGB>,
     {
         self.map.insert(id.to_string(), color.into());
         self.save()

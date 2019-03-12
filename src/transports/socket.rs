@@ -1,6 +1,5 @@
 use crate::queue::Queue;
-use crate::Transport;
-use streamchat::types::Message;
+use crate::{Message, Transport};
 
 use std::io::{self, prelude::*};
 use std::net::{Shutdown, TcpListener, TcpStream};
@@ -47,9 +46,6 @@ impl Socket {
 
             debug!("starting run loop");
             loop {
-                // TODO: this could be implemented with a barrier
-                // breaks -> .emplace or whatever
-                // start -> .take or whatever
                 'accept: loop {
                     match listener.accept() {
                         Ok((stream, addr)) => {
@@ -118,20 +114,20 @@ impl Socket {
 }
 
 impl Transport for Socket {
-    fn name(&self) -> &'static str {
-        "socket"
-    }
+    fn send(&mut self, data: Message) -> Result<(), Box<std::error::Error>> {
+        use std::io::{Error, ErrorKind};
 
-    fn send(&mut self, data: &Message) -> Result<(), crate::Error> {
         if self.rx.is_full() {
             trace!("buffer full, dropping one");
             self.rx
                 .recv()
-                .map_err(|_| crate::Error::Send(self.name()))?;
+                .map_err(|e| Box::new(Error::new(ErrorKind::NotConnected, e)))
+                .map_err(|e| e as Box<dyn std::error::Error>)?;
         }
-        // expensive..
+
         self.tx
-            .send(data.clone())
-            .map_err(|_| crate::Error::Send(self.name()))
+            .send(data)
+            .map_err(|e| Box::new(Error::new(ErrorKind::Interrupted, e)))
+            .map_err(|e| e as Box<dyn std::error::Error>)
     }
 }

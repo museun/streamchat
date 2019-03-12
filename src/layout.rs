@@ -1,8 +1,9 @@
-use super::*;
 use std::borrow::Cow;
 use std::fmt;
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
+
+use twitchchat::twitch::RGB;
 
 use termcolor::{Buffer, ColorSpec, WriteColor};
 use unicode_width::UnicodeWidthStr;
@@ -28,7 +29,7 @@ pub fn bounding_with_color<'a>(
     nick: TruncateCell<'a>,
     width: usize,
     data: &'a str,
-    color: impl Into<Color>,
+    color: impl Into<RGB>,
 ) -> Bounding<'a> {
     let mut msg = MessageCell::new(&data, width, start.width() + end.width() + 2);
     msg.set_color(color.into());
@@ -43,7 +44,7 @@ pub fn bounding_with_color<'a>(
 #[derive(Debug, Clone)]
 pub struct Cell<'a> {
     size: usize,
-    color: Color,
+    color: RGB,
     buf: Vec<&'a str>,
 }
 
@@ -73,11 +74,11 @@ impl<'a> Cell<'a> {
         Self {
             size,
             buf,
-            color: Color::default(),
+            color: RGB::default(),
         }
     }
 
-    pub fn new_with_color(data: &'a str, size: usize, color: impl Into<Color>) -> Self {
+    pub fn new_with_color(data: &'a str, size: usize, color: impl Into<RGB>) -> Self {
         let mut this = Self::new(data, size);
         this.set_color(color.into());
         this
@@ -93,11 +94,11 @@ impl<'a> Cell<'a> {
         self.buf.to_vec()
     }
 
-    pub fn set_color(&mut self, color: Color) {
+    pub fn set_color(&mut self, color: RGB) {
         self.color = color
     }
 
-    pub fn color(&self) -> Color {
+    pub fn color(&self) -> RGB {
         self.color
     }
 }
@@ -111,15 +112,15 @@ pub struct TruncateCell<'a> {
     size: usize,
     ch: char,
     name: Cow<'a, str>,
-    color: Color,
+    color: RGB,
 }
 
 impl<'a> TruncateCell<'a> {
     pub fn new(data: &str, limit: usize, ch: char) -> Self {
-        Self::new_with_color(data, limit, ch, Color::default())
+        Self::new_with_color(data, limit, ch, RGB::default())
     }
 
-    pub fn new_with_color(data: &str, limit: usize, ch: char, color: impl Into<Color>) -> Self {
+    pub fn new_with_color(data: &str, limit: usize, ch: char, color: impl Into<RGB>) -> Self {
         let s = if data.len() > limit {
             let mut s = data[..limit - 1].to_string();
             s.push(ch);
@@ -144,7 +145,7 @@ impl<'a> TruncateCell<'a> {
         self.name.clone()
     }
 
-    pub fn color(&self) -> Color {
+    pub fn color(&self) -> RGB {
         self.color
     }
 }
@@ -157,7 +158,7 @@ impl<'a> FixedCell<'a> {
         FixedCell(Cell::new(data, data.len()))
     }
 
-    pub fn new_with_color(data: &'a str, color: impl Into<Color>) -> Self {
+    pub fn new_with_color(data: &'a str, color: impl Into<RGB>) -> Self {
         let mut cell = Cell::new(data, data.len());
         cell.set_color(color.into());
         FixedCell(cell)
@@ -194,8 +195,8 @@ macro_rules! deref_column_impl {
 
 #[derive(Debug, Clone)]
 enum State<'a> {
-    Show(Color, Cow<'a, str>),
-    Pad(Color, Cow<'a, str>, usize),
+    Show(RGB, Cow<'a, str>),
+    Pad(RGB, Cow<'a, str>, usize),
     Hide(usize),
     Empty,
 }
@@ -219,10 +220,10 @@ enum ParamKind {
 }
 
 struct ParamPack<'a> {
-    msg: (&'a str, Color),
-    start: (&'a str, layout::FixedCell<'a>),
-    nick: (Cow<'a, str>, layout::TruncateCell<'a>),
-    end: (&'a str, layout::FixedCell<'a>),
+    msg: (&'a str, RGB),
+    start: (&'a str, FixedCell<'a>),
+    nick: (Cow<'a, str>, TruncateCell<'a>),
+    end: (&'a str, FixedCell<'a>),
 }
 
 impl<'a> ParamPack<'a> {
@@ -375,7 +376,7 @@ impl<'a> Bounding<'a> {
                 let extract = |s: &State<'_>| match s {
                     State::Show(c, _) => (*c, s.to_string()),
                     State::Pad(c, _, _) => (*c, s.to_string()),
-                    s => (Color::default(), s.to_string()),
+                    s => (RGB::default(), s.to_string()),
                 };
 
                 for (i, part) in [start, nick, msg, end].iter().enumerate() {
@@ -393,7 +394,7 @@ impl<'a> Bounding<'a> {
 }
 
 pub trait Writer {
-    fn surround(&mut self, color: Color);
+    fn surround(&mut self, color: RGB);
 
     fn write(&mut self, s: &str);
     fn writeln(&mut self, s: &str);
@@ -423,7 +424,7 @@ impl IntoIterator for VecBuffer {
 }
 
 impl Writer for VecBuffer {
-    fn surround(&mut self, _color: Color) {}
+    fn surround(&mut self, _color: RGB) {}
 
     fn write(&mut self, s: &str) {
         self.buf.push_str(s);
@@ -453,8 +454,8 @@ impl<'a> TermColorWriter<'a> {
 }
 
 impl<'a> Writer for TermColorWriter<'a> {
-    fn surround(&mut self, color: Color) {
-        let Color(r, g, b) = color;
+    fn surround(&mut self, color: RGB) {
+        let RGB(r, g, b) = color;
         self.buffer
             .set_color(
                 ColorSpec::new()
