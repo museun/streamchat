@@ -404,8 +404,8 @@ fn main() {
     );
 
     let channel = format!("#{}", config.channel);
-    client.join(&channel).unwrap();
-    info!("joined: {}", &channel);
+    client.join(channel.clone()).unwrap();
+    info!("joined: {}", channel);
 
     let mut processor = CommandProcessor::default();
     processor.add("color", handle_color);
