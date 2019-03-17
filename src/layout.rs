@@ -3,7 +3,7 @@ use std::fmt;
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
 
-use twitchchat::twitch::RGB;
+use twitchchat::RGB;
 
 use termcolor::{Buffer, ColorSpec, WriteColor};
 use unicode_width::UnicodeWidthStr;

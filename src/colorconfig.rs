@@ -1,7 +1,7 @@
 use hashbrown::HashMap;
 use log::*;
 use serde::{Deserialize, Serialize};
-use twitchchat::twitch::RGB;
+use twitchchat::RGB;
 
 const COLOR_CONFIG_NAME: &str = "streamchat_colors.json";
 

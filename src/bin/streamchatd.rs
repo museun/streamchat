@@ -6,7 +6,7 @@ use hashbrown::HashMap;
 use log::*;
 use serde::{Deserialize, Serialize};
 
-use twitchchat::twitch::{commands::PrivMsg, Client, Message as TwitchMsg, RGB};
+use twitchchat::{commands::PrivMsg, Client, Message as TwitchMsg, RGB};
 
 use streamchat::{
     transports,   //
@@ -143,6 +143,7 @@ impl<R: Read, W: Write> Service<R, W> {
     }
 
     pub fn run(mut self) -> Result<(), Error> {
+        trace!("test");
         loop {
             let msg = match self.read_message() {
                 Some(msg) => msg,
@@ -150,7 +151,12 @@ impl<R: Read, W: Write> Service<R, W> {
             };
             trace!("got a privmsg");
 
-            let user_id = msg.user_id();
+            if msg.user_id().is_none() {
+                warn!("no user-id attached to that message");
+                continue;
+            }
+
+            let user_id = msg.user_id().unwrap();
             let (data, action) = if msg.message.starts_with('\x01') {
                 (&msg.message[8..msg.message.len() - 1], true)
             } else {
@@ -176,7 +182,7 @@ impl<R: Read, W: Write> Service<R, W> {
             .unwrap_or_else(|| msg.irc_name())
             .to_string();
 
-        let user_id = msg.user_id();
+        let user_id = msg.user_id().expect("user-id");
         let timestamp = streamchat::make_timestamp().to_string();
 
         Message {
@@ -220,7 +226,10 @@ impl<R: Read, W: Write> Service<R, W> {
                 error!("could not read message, quitting: {}", err);
                 std::process::exit(1);
             }
-            _ => None,
+            msg => {
+                trace!("{:?}", msg);
+                None
+            }
         }
     }
 
@@ -242,7 +251,7 @@ fn handle_color(id: u64, args: &str) -> Option<String> {
     let mut colors = ColorConfig::load().expect("color config should exist");
     match args.split_terminator(' ').next() {
         Some(color) => {
-            let color: twitchchat::twitch::Color = color.into();
+            let color: twitchchat::TwitchColor = color.into();
             let rgb = RGB::from(color);
             if rgb.is_dark() {
                 let msg = format!("color {} is too dark", rgb);
@@ -365,7 +374,7 @@ fn main() {
         })
         .init();
 
-    use twitchchat::{twitch::Client, UserConfig};
+    use twitchchat::{Client, UserConfig};
 
     info!("connecting to: {}", twitchchat::TWITCH_IRC_ADDRESS);
     let (read, write) = {
@@ -387,7 +396,7 @@ fn main() {
 
     let user = match client.wait_for_ready() {
         Ok(user) => user,
-        Err(twitchchat::twitch::Error::InvalidRegistration) => {
+        Err(twitchchat::Error::InvalidRegistration) => {
             error!("invalid nick/pass. check the configuration");
             std::process::exit(1);
         }
