@@ -5,7 +5,7 @@ authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-twitchchat = { version = "0.2.1", features = ["all"] }
+twitchchat = { version = "0.2", features = ["all"] }
 log = "0.4.6"
 env_logger = "0.6.1"
 directories = "1.0.2"
@@ -20,4 +20,3 @@ termcolor = "1.0.4"
 atty = "0.2.11"
 term_size = "0.3.1"
 ws = "0.8.0"
-

@@ -85,7 +85,7 @@ fn main() {
         - config.nick_max;
 
     if let Err(err) = connect(config, max, color, (left, right)) {
-        eprintln!("cannot connect: {}", err);
+        eprintln!("{}", err);
         std::process::exit(1);
     }
 }
@@ -102,7 +102,10 @@ fn connect(
         ColorChoice::Never
     });
 
-    let conn = TcpStream::connect(&config.address).map_err(Error::Connect)?;
+    let conn = TcpStream::connect(&config.address).map_err(|e| {
+        eprintln!("cannot connect to: {}", &config.address);
+        Error::Connect(e)
+    })?;
 
     for line in BufReader::new(conn).lines() {
         let line = line.map_err(Error::Read)?;

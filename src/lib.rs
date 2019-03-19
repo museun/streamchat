@@ -23,7 +23,6 @@ pub enum Error {
     TomlRead(toml::de::Error),
     TomlWrite(toml::ser::Error),
 
-    Capabilities,       // TODO provide context
     Send(&'static str), // TODO provide context
 }
 
@@ -36,8 +35,6 @@ impl std::fmt::Display for Error {
             Error::TomlRead(err) => write!(f, "toml read error: {}", err),
             Error::TomlWrite(err) => write!(f, "toml write error: {}", err),
 
-            // what is this for?
-            Error::Capabilities => write!(f, "invalid capabilities"),
             Error::Send(transport) => write!(f, "cannot send to transport '{}'", transport),
         }
     }

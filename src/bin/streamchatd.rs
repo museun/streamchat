@@ -384,6 +384,8 @@ fn main() {
     let conf = UserConfig::builder()
         .nick(nick)
         .token(&config.oauth_token)
+        .tags()
+        .commands()
         .build()
         .expect("valid configuration");
 
