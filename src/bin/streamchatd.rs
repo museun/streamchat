@@ -235,13 +235,9 @@ impl<R: Read, W: Write> Service<R, W> {
 
     fn handle_command(&mut self, user_id: u64, channel: &str, cmd: &str, args: &str) {
         match self.processor.handle(user_id, cmd, args) {
-            Response::Nothing => {}
-            Response::Missing => {
-                let out = format!("unknown command: {} <{}>", cmd, args);
-                self.client.send(channel, &out).unwrap();
-            }
+            Response::Nothing | Response::Missing => {}
             Response::Message(resp) => {
-                self.client.send(channel, &resp).unwrap();
+                self.client.writer().send(channel, &resp).unwrap();
             }
         };
     }
@@ -413,7 +409,7 @@ fn main() {
     );
 
     let channel = format!("#{}", config.channel);
-    client.join(channel.clone()).unwrap();
+    client.writer().join(channel.clone()).unwrap();
     info!("joined: {}", channel);
 
     let mut processor = CommandProcessor::default();
