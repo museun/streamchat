@@ -158,7 +158,8 @@ impl<'a> FixedCell<'a> {
         FixedCell(Cell::new(data, data.len()))
     }
 
-    pub fn new_with_color(data: &'a str, color: impl Into<RGB>) -> Self {
+    pub fn new_with_color(data: &'a str, color: &str) -> Self {
+        let color: RGB = color.parse().unwrap_or_default();
         let mut cell = Cell::new(data, data.len());
         cell.set_color(color.into());
         FixedCell(cell)
@@ -462,19 +463,19 @@ impl<'a> Writer for TermColorWriter<'a> {
                     .set_fg(Some(termcolor::Color::Rgb(r, g, b)))
                     .set_intense(false),
             )
-            .unwrap()
+            .expect("set color of buffer")
     }
 
     fn write(&mut self, s: &str) {
-        write!(self.buffer, "{} ", s).unwrap();
+        write!(self.buffer, "{} ", s).expect("write to buffer");
     }
 
     fn writeln(&mut self, s: &str) {
-        writeln!(self.buffer, "{}", s).unwrap();
+        writeln!(self.buffer, "{}", s).expect("write to buffer");
     }
 
     fn reset(&mut self) {
-        self.buffer.reset().unwrap();
+        self.buffer.reset().expect("reset buffer");
     }
 }
 

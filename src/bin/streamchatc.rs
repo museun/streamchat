@@ -74,8 +74,8 @@ fn main() {
     let left = if left.is_empty() { " " } else { &left };
     let right = if right.is_empty() { " " } else { &right };
 
-    let left = layout::Fringe::new_with_color(&left, config.left_fringe.color.clone());
-    let right = layout::Fringe::new_with_color(&right, config.right_fringe.color.clone());
+    let left = layout::Fringe::new_with_color(&left, &config.left_fringe.color);
+    let right = layout::Fringe::new_with_color(&right, &config.right_fringe.color);
 
     let color = env::var("NO_COLOR").is_err();
 
@@ -125,7 +125,10 @@ fn connect(
             &msg.data,
         )
         .write(&mut layout::TermColorWriter::new(&mut buffer));
-        print!("{}", String::from_utf8(buffer.into_inner()).unwrap());
+        print!(
+            "{}",
+            String::from_utf8(buffer.into_inner()).expect("valid utf-8")
+        );
     }
 
     Ok(())

@@ -37,7 +37,7 @@ impl Socket {
 
         debug!(
             "socket transport listening on: {}",
-            listener.local_addr().unwrap()
+            listener.local_addr().expect("get listeners local address")
         );
 
         thread::spawn(move || {

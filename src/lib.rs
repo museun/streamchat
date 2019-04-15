@@ -61,6 +61,6 @@ pub trait Transport: Send {
 pub fn make_timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .expect("valid timestamp")
         .as_millis() as u64
 }

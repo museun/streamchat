@@ -6,7 +6,11 @@ use hashbrown::HashMap;
 use log::*;
 use serde::{Deserialize, Serialize};
 
-use twitchchat::{commands::PrivMsg, Client, Message as TwitchMsg, RGB};
+use twitchchat::{
+    commands::PrivMsg, Client, Message as TwitchMsg, ReadAdapter, SyncReadAdapter, RGB,
+};
+
+use twitchchat::{Error as TwitchError, ReadError};
 
 use streamchat::{
     transports,   //
@@ -129,7 +133,7 @@ struct Service<R, W> {
     processor: CommandProcessor,
 }
 
-impl<R: Read, W: Write> Service<R, W> {
+impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
     pub fn new(
         client: Client<R, W>,
         transports: Vec<Box<dyn Transport>>,
@@ -151,12 +155,13 @@ impl<R: Read, W: Write> Service<R, W> {
             };
             trace!("got a privmsg");
 
-            if msg.user_id().is_none() {
-                warn!("no user-id attached to that message");
-                continue;
-            }
-
-            let user_id = msg.user_id().unwrap();
+            let user_id = match msg.user_id() {
+                None => {
+                    warn!("no user-id attached to that message");
+                    continue;
+                }
+                Some(user_id) => user_id,
+            };
             let (data, action) = if msg.message.starts_with('\x01') {
                 (&msg.message[8..msg.message.len() - 1], true)
             } else {
@@ -177,10 +182,7 @@ impl<R: Read, W: Write> Service<R, W> {
 
     fn new_local_msg(msg: PrivMsg, data: String, is_action: bool) -> Message {
         let colors = ColorConfig::load().expect("load colorconfig");
-        let name = msg
-            .display_name()
-            .unwrap_or_else(|| msg.irc_name())
-            .to_string();
+        let name = msg.display_name().unwrap_or_else(|| msg.user()).to_string();
 
         let user_id = msg.user_id().expect("user-id");
         let timestamp = streamchat::make_timestamp().to_string();
@@ -237,7 +239,10 @@ impl<R: Read, W: Write> Service<R, W> {
         match self.processor.handle(user_id, cmd, args) {
             Response::Nothing | Response::Missing => {}
             Response::Message(resp) => {
-                self.client.writer().send(channel, &resp).unwrap();
+                self.client
+                    .writer()
+                    .send(channel, &resp)
+                    .expect("send to client");
             }
         };
     }
@@ -247,7 +252,7 @@ fn handle_color(id: u64, args: &str) -> Option<String> {
     let mut colors = ColorConfig::load().expect("color config should exist");
     match args.split_terminator(' ').next() {
         Some(color) => {
-            let color: twitchchat::TwitchColor = color.into();
+            let color: twitchchat::Color = color.parse().unwrap_or_default();
             let rgb = RGB::from(color);
             if rgb.is_dark() {
                 let msg = format!("color {} is too dark", rgb);
@@ -374,11 +379,13 @@ fn main() {
 
     info!("connecting to: {}", twitchchat::TWITCH_IRC_ADDRESS);
     let (read, write) = {
-        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).unwrap();
-        let write = read.try_clone().unwrap();
+        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect("connect to twitch");
+        let write = read.try_clone().expect("clone tcpstream");
         (read, write)
     };
     info!("opened connection");
+
+    let read = SyncReadAdapter::new(read);
 
     let mut client = Client::new(read, write);
     let conf = UserConfig::builder()
@@ -390,11 +397,11 @@ fn main() {
         .expect("valid configuration");
 
     info!("registering with nick: {}", conf.nick);
-    client.register(conf).unwrap();
+    client.register(conf).expect("register with twitch");
 
     let user = match client.wait_for_ready() {
         Ok(user) => user,
-        Err(twitchchat::Error::InvalidRegistration) => {
+        Err(ReadError::Inner(TwitchError::InvalidRegistration)) => {
             error!("invalid nick/pass. check the configuration");
             std::process::exit(1);
         }
@@ -406,12 +413,12 @@ fn main() {
 
     info!(
         "connected with {} ({}).",
-        user.display_name.unwrap(),
+        user.display_name.expect("get our display name"),
         user.user_id
     );
 
     let channel = format!("#{}", config.channel);
-    client.writer().join(channel.clone()).unwrap();
+    client.writer().join(channel.clone()).expect("join channel");
     info!("joined: {}", channel);
 
     let mut processor = CommandProcessor::default();

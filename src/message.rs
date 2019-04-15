@@ -1,5 +1,4 @@
-use twitchchat::irc::types::Tags;
-use twitchchat::{Badge, Emotes, TwitchColor};
+use twitchchat::{Badge, Color, Emotes, Tags};
 
 use serde::{Deserialize, Serialize};
 
@@ -22,8 +21,8 @@ pub struct Message {
     pub name: String,
     pub data: String,
 
-    pub color: TwitchColor,
-    pub custom_color: Option<TwitchColor>,
+    pub color: Color,
+    pub custom_color: Option<Color>,
 
     pub is_action: bool,
 
