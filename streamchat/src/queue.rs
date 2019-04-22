@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use std::collections::VecDeque;
+use std::fmt::Debug;
 
 #[derive(Debug)]
 pub struct Queue<T> {
@@ -7,10 +8,7 @@ pub struct Queue<T> {
     size: usize,
 }
 
-impl<T> Queue<T>
-where
-    T: std::fmt::Debug,
-{
+impl<T: Debug> Queue<T> {
     pub fn new(size: usize) -> Self {
         Queue {
             data: VecDeque::with_capacity(size),
@@ -43,6 +41,10 @@ where
 
     pub fn len(&self) -> usize {
         self.data.len()
+    }
+
+    pub fn clear(&mut self) {
+        self.data.clear();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &T> {

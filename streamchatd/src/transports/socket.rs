@@ -1,12 +1,11 @@
-use crate::queue::Queue;
-use crate::{Message, Transport};
-
 use std::io::{self, prelude::*};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::thread;
 
 use crossbeam_channel as channel;
 use log::{debug, info, trace, warn};
+use streamchat::queue::Queue;
+use streamchat::{Message, Transport};
 
 #[derive(Debug)]
 pub struct Socket {

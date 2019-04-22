@@ -1,0 +1,18 @@
+[package]
+name = "streamchatc"
+version = "0.1.0"
+authors = ["museun <museun@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+twitchchat = "0.4.2"
+streamchat = { path = "../streamchat" }
+configurable = { git = "https://github.com/museun/configurable", version = "0.2.3" }
+
+unicode-width = "0.1.5"
+serde = { version = "1.0.90", features = ["derive"] }
+serde_json = "1.0.39"
+
+gumdrop = "0.5.0"
+gumdrop_derive = "0.5.0"
+crossterm = "0.9.3"

@@ -2,105 +2,50 @@ use std::env;
 use std::io::prelude::*;
 use std::net::TcpStream;
 
+use configurable::Configurable;
 use hashbrown::HashMap;
 use log::*;
 use serde::{Deserialize, Serialize};
 
 use twitchchat::{
-    commands::PrivMsg, Client, Message as TwitchMsg, ReadAdapter, SyncReadAdapter, RGB,
+    commands::PrivMsg,
+    Client,
+    Error as TwitchError,
+    Message as TwitchMsg,
+    ReadAdapter,
+    ReadError,
+    SyncReadAdapter,
+    UserConfig,
+    RGB,
 };
-
-use twitchchat::{Error as TwitchError, ReadError};
 
 use streamchat::{
-    transports,   //
-    Args,         //
-    ColorConfig,  //
-    Configurable, //
-    Error,        //
-    Message,      //
-    Transport,    //
-    Version,      //
+    Message,   //
+    Transport, //
+    Version,   //
 };
 
-trait RelativeColor {
-    fn is_dark(self) -> bool;
-    fn is_light(self) -> bool;
-}
+mod error;
+use error::Error;
 
-impl RelativeColor for RGB {
-    fn is_dark(self) -> bool {
-        let HSL(.., l) = self.into();
-        l < 30.0 // random number
-    }
+mod colorconfig;
+use colorconfig::ColorConfig;
 
-    fn is_light(self) -> bool {
-        let HSL(.., l) = self.into();
-        l < 80.0 // random number
-    }
-}
+mod color;
+use color::RelativeColor;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
-pub struct HSL(pub f64, pub f64, pub f64); // H S L
+mod transports;
 
-impl std::fmt::Display for HSL {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let HSL(h, s, l) = self;
-        write!(f, "{:.2}%, {:.2}%, {:.2}%", h, s, l)
-    }
-}
-
-impl From<RGB> for HSL {
-    fn from(RGB(r, g, b): RGB) -> Self {
-        #![allow(clippy::unknown_clippy_lints, clippy::many_single_char_names)]
-        use std::cmp::{max, min};
-
-        let max = max(max(r, g), b);
-        let min = min(min(r, g), b);
-        let (r, g, b) = (
-            f64::from(r) / 255.0,
-            f64::from(g) / 255.0,
-            f64::from(b) / 255.0,
-        );
-
-        let (min, max) = (f64::from(min) / 255.0, f64::from(max) / 255.0);
-        let l = (max + min) / 2.0;
-        let delta: f64 = max - min;
-        // this checks for grey
-        if delta == 0.0 {
-            return HSL(0.0, 0.0, ((l * 100.0).round() / 100.0) * 100.0);
-        }
-
-        let s = if l < 0.5 {
-            delta / (max + min)
-        } else {
-            delta / (2.0 - max - min)
-        };
-
-        let r2 = (((max - r) / 6.0) + (delta / 2.0)) / delta;
-        let g2 = (((max - g) / 6.0) + (delta / 2.0)) / delta;
-        let b2 = (((max - b) / 6.0) + (delta / 2.0)) / delta;
-
-        let h = match match max {
-            x if (x - r).abs() < 0.001 => b2 - g2,
-            x if (x - g).abs() < 0.001 => (1.0 / 3.0) + r2 - b2,
-            _ => (2.0 / 3.0) + g2 - r2,
-        } {
-            h if h < 0.0 => h + 1.0,
-            h if h > 1.0 => h - 1.0,
-            h => h,
-        };
-
-        let h = (h * 360.0 * 100.0).round() / 100.0;
-        let s = ((s * 100.0).round() / 100.0) * 100.0;
-        let l = ((l * 100.0).round() / 100.0) * 100.0;
-
-        HSL(h, s, l)
-    }
+#[inline]
+pub(crate) fn make_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("valid system time")
+        .as_millis() as u64
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Config {
+pub(crate) struct Config {
     pub address: String,
     // XXX: probably shouldn't do this
     pub oauth_token: String,
@@ -122,6 +67,8 @@ impl Default for Config {
 }
 
 impl Configurable for Config {
+    const ORG: &'static str = "museun2";
+    const APP: &'static str = "streamchat";
     fn name() -> &'static str {
         "streamchatd.toml"
     }
@@ -147,7 +94,6 @@ impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
     }
 
     pub fn run(mut self) -> Result<(), Error> {
-        trace!("test");
         loop {
             let msg = match self.read_message() {
                 Some(msg) => msg,
@@ -181,11 +127,11 @@ impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
     }
 
     fn new_local_msg(msg: PrivMsg, data: String, is_action: bool) -> Message {
-        let colors = ColorConfig::load().expect("load colorconfig");
+        let colors = ColorConfig::load();
         let name = msg.display_name().unwrap_or_else(|| msg.user()).to_string();
 
         let user_id = msg.user_id().expect("user-id");
-        let timestamp = streamchat::make_timestamp().to_string();
+        let timestamp = crate::make_timestamp().to_string();
 
         Message {
             version: Version::default(),
@@ -208,14 +154,7 @@ impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
             trace!("sending to a transport");
 
             if let Err(err) = transport.send(msg.clone()) {
-                if let Some(transports::WsError::RestartRequired) =
-                    err.downcast_ref::<transports::WsError>()
-                {
-                    warn!("ws server must be restarted");
-                    warn!("not doing it now.")
-                } else {
-                    error!("cannot write to transport: {}", err);
-                }
+                error!("cannot write to transport: {}", err);
             }
         }
     }
@@ -249,7 +188,7 @@ impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
 }
 
 fn handle_color(id: u64, args: &str) -> Option<String> {
-    let mut colors = ColorConfig::load().expect("color config should exist");
+    let mut colors = ColorConfig::load();
     match args.split_terminator(' ').next() {
         Some(color) => {
             let color: twitchchat::Color = color.parse().unwrap_or_default();
@@ -282,9 +221,10 @@ type Func = Box<Fn(u64, &str) -> Option<String>>;
 struct CommandProcessor(HashMap<String, Func>);
 
 impl CommandProcessor {
-    pub fn add<S>(&mut self, command: S, func: impl Fn(u64, &str) -> Option<String> + 'static)
+    pub fn add<S, F>(&mut self, command: S, func: F)
     where
         S: ToString,
+        F: Fn(u64, &str) -> Option<String> + 'static,
     {
         self.0
             .insert(format!("!{}", command.to_string()), Box::new(func));
@@ -306,13 +246,16 @@ impl CommandProcessor {
 // TODO oauth implicit flow grant
 // TODO make the transport selectable (e.g. provide a trait for this)
 fn main() {
-    let config = match Config::load() {
-        Ok(config) => config,
-        Err(Error::Read(..)) => {
-            let dir = Config::dir(); // this is probably not the right thing to do
-            eprintln!("creating default config.");
-            eprintln!("look for it at {}", dir.to_string_lossy());
-            Config::default().save().expect("save new config");
+    use configurable::LoadState::*;
+    let config = match Config::load_or_default() {
+        Ok(Loaded(config)) => config,
+        Ok(Default(config)) => {
+            eprintln!("creating a default config.");
+            eprintln!(
+                "look for it at: {}",
+                Config::path().unwrap().to_string_lossy()
+            );
+            config.save().unwrap();
             std::process::exit(2)
         }
         Err(err) => {
@@ -320,50 +263,6 @@ fn main() {
             std::process::exit(1)
         }
     };
-
-    let wsconfig = match transports::WsConfig::load() {
-        Ok(config) => config,
-        Err(Error::Read(..)) => {
-            let dir = transports::WsConfig::dir(); // this is probably not the right thing to do
-            eprintln!("creating default websocket config.");
-            eprintln!("look for it at {}", dir.to_string_lossy());
-            transports::WsConfig::default()
-                .save()
-                .expect("save new config");
-            std::process::exit(2)
-        }
-        Err(err) => {
-            eprintln!("cannot load config: {}", err);
-            std::process::exit(1)
-        }
-    };
-
-    let args = env::args().skip(1).collect::<Vec<_>>();
-    let args = Args::parse(&args).unwrap_or_default();
-
-    let limit = args.get_as("-l", config.limit, |s| s.parse::<usize>().ok());
-    let channel = args.get("-c", &config.channel);
-    let nick = args.get("-n", &config.nick);
-
-    match (
-        channel.is_empty(),
-        nick.is_empty(),
-        config.oauth_token.is_empty(),
-    ) {
-        (true, _, _) => {
-            eprintln!("`channel` is invalid, or use the arg: -c <channel>");
-            std::process::exit(1)
-        }
-        (_, true, _) => {
-            eprintln!("`nick` is invalid. or use the arg: -n <nick>");
-            std::process::exit(1)
-        }
-        (_, _, true) => {
-            eprintln!("`oauth_token` is invalid. modify the config",);
-            std::process::exit(1)
-        }
-        _ => {}
-    }
 
     let color = env::var("NO_COLOR").is_err();
     env_logger::Builder::from_default_env()
@@ -375,11 +274,13 @@ fn main() {
         })
         .init();
 
-    use twitchchat::{Client, UserConfig};
 
     info!("connecting to: {}", twitchchat::TWITCH_IRC_ADDRESS);
     let (read, write) = {
-        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect("connect to twitch");
+        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect(
+            "connect to
+    twitch",
+        );
         let write = read.try_clone().expect("clone tcpstream");
         (read, write)
     };
@@ -389,7 +290,7 @@ fn main() {
 
     let mut client = Client::new(read, write);
     let conf = UserConfig::builder()
-        .nick(nick)
+        .nick(&config.nick)
         .token(&config.oauth_token)
         .tags()
         .commands()
@@ -424,19 +325,9 @@ fn main() {
     let mut processor = CommandProcessor::default();
     processor.add("color", handle_color);
 
-    let ws = match transports::WebsocketServer::start(wsconfig) {
-        Ok(ws) => ws,
-        Err(err) => {
-            error!("{}", err);
-            std::process::exit(3);
-        }
-    };
-
-    let socket = transports::Socket::start(&config.address, limit);
-
+    let socket = transports::Socket::start(&config.address, config.limit);
     let transports: Vec<Box<dyn Transport>> = vec![
         Box::new(socket), // socket transport
-        Box::new(ws),     // websocket transport
     ];
 
     if let Err(err) = Service::new(client, transports, processor).run() {

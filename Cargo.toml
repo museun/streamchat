@@ -1,23 +1,6 @@
-[package]
-name = "streamchat"
-version = "0.1.0"
-authors = ["museun <museun@outlook.com>"]
-edition = "2018"
-
-[dependencies]
-twitchchat = "0.4.2"
-log = "0.4.6"
-env_logger = "0.6.1"
-directories = "1.0.2"
-crossbeam-channel = "0.3.8"
-hashbrown = { version = "0.2.2", features = ["serde"] }
-serde = { version = "1.0.90", features = ["derive"] }
-serde_json = "1.0.39"
-toml = "0.5.0"
-unicode-segmentation = "1.2.1"
-unicode-width = "0.1.5"
-termcolor = "1.0.4"
-atty = "0.2.11"
-term_size = "0.3.1"
-rand = "0.6.5"
-ws = "0.8.0"
+[workspace]
+members = [
+    "streamchat",
+    "streamchatc",
+    "streamchatd",
+]
