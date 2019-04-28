@@ -167,7 +167,6 @@ impl Window {
 
         // this doesn't do anything?
         crossterm::cursor().hide().unwrap();
-
         crossterm::input().enable_mouse_mode().unwrap();
 
         Self {
@@ -188,6 +187,21 @@ impl Window {
                     buf.lock().unwrap().push(msg);
                 }
             });
+
+            let buf = Arc::clone(&self.buf);
+            let config = self.config.clone();
+            std::thread::spawn(move || {
+                let mut size = crossterm::terminal().terminal_size();
+                for (w, h) in std::iter::repeat_with(|| {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    crossterm::terminal().terminal_size()
+                }) {
+                    if w != size.0 || h != size.1 {
+                        size = (w, h);
+                        Self::clear_and_write_all(&buf.lock().unwrap(), &config)
+                    }
+                }
+            });
         }
 
         use {
@@ -197,11 +211,9 @@ impl Window {
             crossterm::MouseEvent::*,
         };
 
-        // let mut log = std::fs::File::create("out.txt").unwrap();
         let mut reader = crossterm::input().read_sync();
         loop {
             if let Some(event) = reader.next() {
-                // writeln!(&mut log, "{:?}", event);
                 match event {
                     Keyboard(Ctrl('c')) => break,
                     Keyboard(Ctrl('r')) => self.refresh(),
@@ -239,12 +251,16 @@ impl Window {
     }
 
     fn refresh(&mut self) {
+        let buf = self.buf.lock().unwrap();
+        Self::clear_and_write_all(&buf, &self.config)
+    }
+
+    fn clear_and_write_all(buf: &Queue<Message>, config: &Config) {
         crossterm::terminal()
             .clear(crossterm::ClearType::All)
             .expect("clear");
-        let buf = self.buf.lock().unwrap();
         for message in buf.iter() {
-            Self::write_message(&message, &self.config)
+            Self::write_message(&message, &config)
         }
     }
 
