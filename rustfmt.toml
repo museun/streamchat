@@ -1,6 +1,9 @@
+edition = "2018"
+reorder_imports = false  # rls will mess things up if these are set
+reorder_modules = false  # rls will mess things up if these are set
+
 wrap_comments = true
 format_strings = true
 format_macro_matchers = true
 fn_single_line = false
 imports_layout = "HorizontalVertical"
-edition = "2018"

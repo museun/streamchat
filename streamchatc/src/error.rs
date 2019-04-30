@@ -2,7 +2,6 @@
 pub enum Error {
     Connect(std::io::Error),
     Read(std::io::Error),
-
 }
 
 impl std::fmt::Display for Error {

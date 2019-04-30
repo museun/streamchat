@@ -8,11 +8,9 @@ use configurable::Configurable;
 use gumdrop::Options;
 use serde::{Deserialize, Serialize};
 use streamchat::{queue::Queue, Message};
-
 use crossterm::AlternateScreen;
 
 mod layout;
-
 mod error;
 use self::error::Error;
 
@@ -49,11 +47,15 @@ impl Default for Config {
     }
 }
 
+impl configurable::Config for Config {}
+
 impl Configurable for Config {
-    const ORG: &'static str = "museun2";
-    const APP: &'static str = "streamchat";
-    fn name() -> &'static str {
-        "streamchatc.toml"
+    const ORGANIZATION: &'static str = "museun";
+    const APPLICATION: &'static str = "streamchat";
+    const NAME: &'static str = "streamchatc.toml";
+
+    fn ensure_dir() -> Result<std::path::PathBuf, configurable::Error> {
+        <Self as configurable::Config>::ensure_dir()
     }
 }
 
@@ -209,7 +211,7 @@ impl Window {
             crossterm::KeyEvent::*,
             crossterm::MouseButton::*,
             crossterm::MouseEvent::*,
-        };
+};
 
         let mut reader = crossterm::input().read_sync();
         loop {

@@ -66,11 +66,15 @@ impl Default for Config {
     }
 }
 
+impl configurable::Config for Config {}
+
 impl Configurable for Config {
-    const ORG: &'static str = "museun2";
-    const APP: &'static str = "streamchat";
-    fn name() -> &'static str {
-        "streamchatd.toml"
+    const ORGANIZATION: &'static str = "museun";
+    const APPLICATION: &'static str = "streamchat";
+    const NAME: &'static str = "streamchatd.toml";
+
+    fn ensure_dir() -> Result<std::path::PathBuf, configurable::Error> {
+        <Self as configurable::Config>::ensure_dir()
     }
 }
 
@@ -94,11 +98,7 @@ impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
     }
 
     pub fn run(mut self) -> Result<(), Error> {
-        loop {
-            let msg = match self.read_message() {
-                Some(msg) => msg,
-                None => continue,
-            };
+        while let Some(msg) = self.read_message() {
             trace!("got a privmsg");
 
             let user_id = match msg.user_id() {
@@ -124,6 +124,8 @@ impl<R: ReadAdapter<W>, W: Write> Service<R, W> {
             let data = data.to_string();
             self.dispatch(Self::new_local_msg(msg, data, action));
         }
+
+        Ok(())
     }
 
     fn new_local_msg(msg: PrivMsg, data: String, is_action: bool) -> Message {
@@ -277,10 +279,7 @@ fn main() {
 
     info!("connecting to: {}", twitchchat::TWITCH_IRC_ADDRESS);
     let (read, write) = {
-        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect(
-            "connect to
-    twitch",
-        );
+        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect("connect to twitch");
         let write = read.try_clone().expect("clone tcpstream");
         (read, write)
     };
