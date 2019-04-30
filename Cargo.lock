@@ -526,7 +526,7 @@ dependencies = [
 
 [[package]]
 name = "streamchatc"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "configurable 0.3.1 (git+https://github.com/museun/configurable)",
  "crossterm 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
