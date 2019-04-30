@@ -43,8 +43,8 @@ dependencies = [
 
 [[package]]
 name = "configurable"
-version = "0.3.0"
-source = "git+https://github.com/museun/configurable#a09b80451e027fcc945b969a20ee5991c1474163"
+version = "0.3.1"
+source = "git+https://github.com/museun/configurable#c8a059980e276d73f02db53a2d6c4183297bdb78"
 dependencies = [
  "directories 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -528,7 +528,7 @@ dependencies = [
 name = "streamchatc"
 version = "0.1.0"
 dependencies = [
- "configurable 0.3.0 (git+https://github.com/museun/configurable)",
+ "configurable 0.3.1 (git+https://github.com/museun/configurable)",
  "crossterm 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "gumdrop 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gumdrop_derive 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -543,7 +543,7 @@ dependencies = [
 name = "streamchatd"
 version = "0.1.0"
 dependencies = [
- "configurable 0.3.0 (git+https://github.com/museun/configurable)",
+ "configurable 0.3.1 (git+https://github.com/museun/configurable)",
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hashbrown 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -685,7 +685,7 @@ dependencies = [
 "checksum bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "228047a76f468627ca71776ecdebd732a3423081fcf5125585bcd7c49886ce12"
 "checksum cfg-if 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "11d43355396e872eefb45ce6342e4374ed7bc2b3a502d1b28e36d6e23c05d1f4"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
-"checksum configurable 0.3.0 (git+https://github.com/museun/configurable)" = "<none>"
+"checksum configurable 0.3.1 (git+https://github.com/museun/configurable)" = "<none>"
 "checksum crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)" = "0f0ed1a4de2235cabda8558ff5840bffb97fcb64c97827f354a451307df5f72b"
 "checksum crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "f8306fcef4a7b563b76b7dd949ca48f52bc1141aa067d2ea09565f3e2652aa5c"
 "checksum crossterm 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)" = "927454c82a994b7c90928f1fd43f9a4203f61490c87901d265db4fd7b46c34d4"

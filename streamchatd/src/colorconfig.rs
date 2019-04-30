@@ -1,7 +1,7 @@
+use configurable::{Configurable, Data};
 use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 use twitchchat::RGB;
-use configurable::{Configurable, Data};
 
 use crate::Error;
 

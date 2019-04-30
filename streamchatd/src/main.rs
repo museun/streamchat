@@ -8,15 +8,8 @@ use log::*;
 use serde::{Deserialize, Serialize};
 
 use twitchchat::{
-    commands::PrivMsg,
-    Client,
-    Error as TwitchError,
-    Message as TwitchMsg,
-    ReadAdapter,
-    ReadError,
-    SyncReadAdapter,
-    UserConfig,
-    RGB,
+    commands::PrivMsg, Client, Error as TwitchError, Message as TwitchMsg, ReadAdapter, ReadError,
+    SyncReadAdapter, UserConfig, RGB,
 };
 
 use streamchat::{
@@ -275,7 +268,6 @@ fn main() {
             env_logger::WriteStyle::Auto
         })
         .init();
-
 
     info!("connecting to: {}", twitchchat::TWITCH_IRC_ADDRESS);
     let (read, write) = {

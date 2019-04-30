@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::env;
 use std::io::{prelude::*, BufReader};
 use std::net::TcpStream;
@@ -7,10 +6,19 @@ use std::sync::{mpsc, Arc, Mutex};
 use configurable::Configurable;
 use gumdrop::Options;
 use serde::{Deserialize, Serialize};
-use streamchat::{queue::Queue, Message};
-use crossterm::AlternateScreen;
+use streamchat::{Message, Queue};
+
+use crossterm::{
+    AlternateScreen, Attribute, Color, Colored,
+    InputEvent::{Keyboard, Mouse},
+    KeyEvent::*,
+    MouseButton::*,
+    MouseEvent::*,
+};
 
 mod layout;
+use layout::{Fringe as FringeCell, MessageCell, Nick};
+
 mod error;
 use self::error::Error;
 
@@ -145,6 +153,68 @@ impl Args {
     }
 }
 
+struct State {
+    left: FringeCell,
+    right: FringeCell,
+    pad: String,
+    size: Size,
+    config: Config,
+    view: Queue<Message>,
+}
+
+impl State {
+    pub fn new(config: Config) -> Self {
+        let (f, c) = (&config.left_fringe.fringe, &config.left_fringe.color);
+        let left = FringeCell::new(f, c);
+
+        let (f, c) = (&config.right_fringe.fringe, &config.right_fringe.color);
+        let right = FringeCell::new(f, c);
+
+        let size = {
+            let (w, h) = crossterm::terminal().terminal_size();
+            Size {
+                lines: h as _,
+                columns: w as _,
+            }
+        };
+
+        let pad = " ".repeat(config.nick_max + 3);
+
+        Self {
+            left,
+            right,
+            pad,
+            size,
+            view: Queue::new(config.buffer_max),
+            config,
+        }
+    }
+
+    pub fn update_size(&mut self, size: Size) {
+        self.size = size;
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    pub fn size(&self) -> Size {
+        self.size
+    }
+
+    pub fn left(&self) -> &FringeCell {
+        &self.left
+    }
+
+    pub fn right(&self) -> &FringeCell {
+        &self.right
+    }
+
+    pub fn pad(&self) -> &str {
+        &self.pad
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Size {
     lines: usize,
@@ -152,66 +222,52 @@ struct Size {
 }
 
 struct Window {
-    config: Config,
-    term: crossterm::Terminal,
-    size: Size,
-    buf: Arc<Mutex<Queue<Message>>>,
+    state: Arc<Mutex<State>>,
 }
 
 impl Window {
     pub fn new(config: Config, _use_color: bool) -> Self {
-        let term = crossterm::terminal();
-        let (w, h) = term.terminal_size();
-        let size = Size {
-            lines: h as usize,
-            columns: w as usize,
-        };
-
         // this doesn't do anything?
         crossterm::cursor().hide().unwrap();
         crossterm::input().enable_mouse_mode().unwrap();
 
         Self {
-            term,
-            size,
-            buf: Arc::new(Mutex::new(Queue::new(config.buffer_max))),
-            config,
+            state: Arc::new(Mutex::new(State::new(config))),
         }
     }
 
     pub fn run(mut self, rx: mpsc::Receiver<Message>) {
         {
-            let buf = Arc::clone(&self.buf);
-            let config = self.config.clone();
+            let state = Arc::clone(&self.state);
             std::thread::spawn(move || {
                 for msg in rx {
-                    Self::write_message(&msg, &config);
-                    buf.lock().unwrap().push(msg);
+                    let mut state = state.lock().unwrap();
+                    Self::write_message(&msg, &state);
+                    state.view.push(msg);
                 }
             });
 
-            let buf = Arc::clone(&self.buf);
-            let config = self.config.clone();
+            let state = Arc::clone(&self.state);
             std::thread::spawn(move || {
-                let mut size = crossterm::terminal().terminal_size();
+                let term = crossterm::terminal();
+                let mut size = term.terminal_size();
                 for (w, h) in std::iter::repeat_with(|| {
                     std::thread::sleep(std::time::Duration::from_millis(100));
-                    crossterm::terminal().terminal_size()
+                    term.terminal_size()
                 }) {
+                    // don't lock the mutex unless a change has happened
                     if w != size.0 || h != size.1 {
                         size = (w, h);
-                        Self::clear_and_write_all(&buf.lock().unwrap(), &config)
+                        let mut state = state.lock().unwrap();
+                        state.update_size(Size {
+                            lines: h as _,
+                            columns: w as _,
+                        });
+                        Self::clear_and_write_all(&state);
                     }
                 }
             });
         }
-
-        use {
-            crossterm::InputEvent::{Keyboard, Mouse},
-            crossterm::KeyEvent::*,
-            crossterm::MouseButton::*,
-            crossterm::MouseEvent::*,
-};
 
         let mut reader = crossterm::input().read_sync();
         loop {
@@ -228,10 +284,6 @@ impl Window {
         }
     }
 
-    pub fn message(&mut self, message: Message) {
-        self.buf.lock().unwrap().push(message);
-    }
-
     fn scroll_up(&mut self) {
         // TODO: not implemented
     }
@@ -240,37 +292,28 @@ impl Window {
         // TODO: not implemented
     }
 
-    fn resize(&mut self, sz: Size) {
-        if self.size != sz {
-            self.size = sz
-        }
-        self.refresh();
-    }
-
     fn clear(&mut self) {
-        self.buf.lock().unwrap().clear();
+        self.state.lock().unwrap().view.clear();
         self.refresh();
     }
 
     fn refresh(&mut self) {
-        let buf = self.buf.lock().unwrap();
-        Self::clear_and_write_all(&buf, &self.config)
+        let state = self.state.lock().unwrap();
+        Self::clear_and_write_all(&state)
     }
 
-    fn clear_and_write_all(buf: &Queue<Message>, config: &Config) {
+    fn clear_and_write_all(state: &State) {
+        // TODO reuse this
         crossterm::terminal()
             .clear(crossterm::ClearType::All)
             .expect("clear");
-        for message in buf.iter() {
-            Self::write_message(&message, &config)
+
+        for message in state.view.iter() {
+            Self::write_message(&message, &state)
         }
     }
 
-    fn write_message(message: &Message, config: &Config) {
-        use crossterm::{Attribute, Color, Colored};
-        use layout::{FixedCell, Fringe, MessageCell, Nick};
-
-        let term = crossterm::terminal();
+    fn write_message(message: &Message, state: &State) {
         let Message {
             name,
             data,
@@ -283,16 +326,15 @@ impl Window {
             .as_ref()
             .map(|k| k.rgb)
             .unwrap_or_else(|| color.rgb);
-        let nick = Nick::new_with_color(&name, config.nick_max, '…', color);
 
-        let left = Fringe::new_with_color(&config.left_fringe.fringe, &config.left_fringe.color);
-        let right =
-            FixedCell::new_with_color(&config.right_fringe.fringe, &config.right_fringe.color);
+        let config = state.config();
 
-        let w = crossterm::terminal().terminal_size().0 as usize;
+        let nick = Nick::new(&name, config.nick_max, '…', color);
+        let left = state.left();
+        let right = state.right();
+
         let size = left.width() + right.width() + nick.width() + 3;
-
-        let message = MessageCell::new(&data, w, size);
+        let message = MessageCell::new(&data, state.size().columns, size);
 
         macro_rules! fg {
             ($color:expr) => {{
@@ -303,52 +345,37 @@ impl Window {
 
         let pad =
             " ".repeat(config.nick_max.saturating_sub(nick.display().len()) + left.width() + 1);
-        let left_pad = " ".repeat(config.nick_max + 3);
 
         let display = message.display();
         for (i, line) in display.iter().enumerate() {
             if display.len() > 1 && i > 0 {
-                term.write(format!(
-                    "{}{}{}",
-                    fg!(left),
-                    left.display()[0],
-                    Attribute::Reset,
-                ))
-                .unwrap();
+                print!("{}{}{}", fg!(left), left.display()[0], Attribute::Reset);
             }
 
             if i == 0 {
-                term.write(format!(
+                print!(
                     "{}{}{}{}: ",
                     fg!(nick),
                     &pad,
                     nick.display(),
                     Attribute::Reset,
-                ))
-                .unwrap();
+                );
             }
 
             if i > 0 {
-                term.write(&left_pad).unwrap();
+                print!("{}", &state.pad());
             }
 
-            term.write(line).unwrap();
+            print!("{}", &line);
 
             if display.len() > 1 && i < display.len() - 1 {
-                term.write(format!(
-                    " {}{}{}",
-                    fg!(right),
-                    right.display()[0],
-                    Attribute::Reset,
-                ))
-                .unwrap();
+                print!(" {}{}{}", fg!(right), right.display()[0], Attribute::Reset,);
             }
 
-            term.write('\n').unwrap();
+            println!();
         }
     }
 }
-
 
 struct Client;
 impl Client {

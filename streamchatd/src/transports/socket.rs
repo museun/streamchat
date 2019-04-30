@@ -4,7 +4,7 @@ use std::thread;
 
 use crossbeam_channel as channel;
 use log::{debug, info, trace, warn};
-use streamchat::{Queue, Message, Transport};
+use streamchat::{Message, Queue, Transport};
 
 #[derive(Debug)]
 pub struct Socket {

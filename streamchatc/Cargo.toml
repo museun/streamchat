@@ -19,4 +19,4 @@ features = ["derive"]
 
 [dependencies.configurable]
 git = "https://github.com/museun/configurable"
-version = "0.3.0"
+version = "0.3.1"

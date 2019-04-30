@@ -39,34 +39,14 @@ impl<'a> Cell<'a> {
         }
     }
 
-    pub fn new_with_color(data: &'a str, size: usize, color: impl Into<RGB>) -> Self {
-        let mut this = Self::new(data, size);
-        this.set_color(color.into());
-        this
-    }
-
-    pub fn width(&self) -> usize {
-        // width isn't implemented for &'a str
-        #[allow(clippy::redundant_closure)]
-        self.buf.iter().map(|s| s.width()).max().unwrap_or_default()
-    }
-
     pub fn display(&self) -> Vec<&'a str> {
         self.buf.to_vec()
-    }
-
-    pub fn set_color(&mut self, color: RGB) {
-        self.color = color
-    }
-
-    pub fn color(&self) -> RGB {
-        self.color
     }
 }
 
 pub type Nick<'a> = TruncateCell<'a>;
 
-pub type Fringe<'a> = FixedCell<'a>;
+pub type Fringe = FixedCell;
 
 #[derive(Debug, Clone)]
 pub struct TruncateCell<'a> {
@@ -77,11 +57,7 @@ pub struct TruncateCell<'a> {
 }
 
 impl<'a> TruncateCell<'a> {
-    pub fn new(data: &str, limit: usize, ch: char) -> Self {
-        Self::new_with_color(data, limit, ch, RGB::default())
-    }
-
-    pub fn new_with_color(data: &str, limit: usize, ch: char, color: impl Into<RGB>) -> Self {
+    pub fn new(data: &str, limit: usize, ch: char, color: impl Into<RGB>) -> Self {
         let s = if data.len() > limit {
             let mut s = data[..limit - 1].to_string();
             s.push(ch);
@@ -112,18 +88,29 @@ impl<'a> TruncateCell<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct FixedCell<'a>(Cell<'a>);
+pub struct FixedCell(String, RGB, usize);
 
-impl<'a> FixedCell<'a> {
-    pub fn new(data: &'a str) -> Self {
-        FixedCell(Cell::new(data, data.len()))
+impl FixedCell {
+    pub fn new(data: impl ToString, color: &str) -> Self {
+        use unicode_width::UnicodeWidthChar;
+        let data = data.to_string();
+        let width = data
+            .chars()
+            .filter_map(UnicodeWidthChar::width)
+            .sum::<usize>();
+        Self(data, color.parse().unwrap_or_default(), width)
     }
 
-    pub fn new_with_color(data: &'a str, color: &str) -> Self {
-        let color: RGB = color.parse().unwrap_or_default();
-        let mut cell = Cell::new(data, data.len());
-        cell.set_color(color);
-        FixedCell(cell)
+    pub fn width(&self) -> usize {
+        self.2
+    }
+
+    pub fn color(&self) -> RGB {
+        self.1
+    }
+
+    pub fn display(&self) -> [&str; 1] {
+        [&self.0; 1]
     }
 }
 
@@ -146,8 +133,8 @@ impl<'a> std::ops::Deref for MessageCell<'a> {
     }
 }
 
-impl<'a> std::ops::Deref for FixedCell<'a> {
-    type Target = Cell<'a>;
+impl std::ops::Deref for FixedCell {
+    type Target = String;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -159,7 +146,7 @@ impl<'a> std::ops::DerefMut for MessageCell<'a> {
     }
 }
 
-impl<'a> std::ops::DerefMut for FixedCell<'a> {
+impl<'a> std::ops::DerefMut for FixedCell {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
