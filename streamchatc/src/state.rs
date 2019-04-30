@@ -10,9 +10,12 @@ pub struct State {
     left: Fringe,
     right: Fringe,
     pad: String,
+
     size: Size,
+
     config: Config,
-    view: Queue<Message>,
+
+    buf: Queue<Message>,
     term: crossterm::Terminal,
 }
 
@@ -40,22 +43,22 @@ impl State {
             right,
             pad,
             size,
-            view: Queue::new(config.buffer_max),
+            buf: Queue::new(config.buffer_max),
             config,
             term,
         }
     }
 
     pub fn push(&mut self, msg: Message) {
-        self.view.push(msg);
+        self.buf.push(msg);
     }
 
     pub fn clear(&mut self) {
-        self.view.clear();
+        self.buf.clear();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Message> {
-        self.view.iter()
+        self.buf.iter()
     }
 
     pub fn update_size(&mut self, size: Size) {

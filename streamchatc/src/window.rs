@@ -6,7 +6,9 @@ use crossterm::{
     MouseButton::*,
     MouseEvent::*,
 };
-use std::sync::{mpsc, Arc, Mutex};
+use std::net::TcpStream;
+use std::io::{BufRead, BufReader};
+use std::sync::{ Arc, Mutex};
 use streamchat::Message;
 
 pub struct Window {
@@ -24,8 +26,8 @@ impl Window {
         }
     }
 
-    pub fn run(mut self, rx: mpsc::Receiver<Message>) {
-        Self::start_read_loop(Arc::clone(&self.state), rx);
+    pub fn run(mut self) {
+        Self::start_read_loop(Arc::clone(&self.state));
         Self::start_resize_loop(Arc::clone(&self.state));
 
         let mut reader = crossterm::input().read_sync();
@@ -43,12 +45,22 @@ impl Window {
         }
     }
 
-    fn start_read_loop(state: Arc<Mutex<State>>, rx: mpsc::Receiver<Message>) {
+    fn start_read_loop(state: Arc<Mutex<State>>) {
         std::thread::spawn(move || {
-            for msg in rx {
+
+            let addr = state.lock().unwrap().config().address.clone();
+            let conn = TcpStream::connect(&addr).unwrap_or_else(|_| {
+                eprintln!("cannot connect to: {}", &addr);
+                std::process::exit(1);
+            });
+
+            let mut lines = BufReader::new(conn).lines();
+            while let Some(Ok(line)) = lines.next() {
+                let msg = serde_json::from_str(&line).expect("valid json");
                 let mut state = state.lock().unwrap();
                 Self::write_message(&msg, &state);
                 state.push(msg);
+
             }
         });
     }
@@ -74,7 +86,6 @@ impl Window {
             }
         });
     }
-
 
     fn scroll_up(&mut self) {
         // TODO: not implemented
