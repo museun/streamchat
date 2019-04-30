@@ -69,7 +69,7 @@ impl Window {
                         lines: h as _,
                         columns: w as _,
                     });
-                    Self::clear_and_write_all(&state);
+                    Self::flush_screen(&state);
                 }
             }
         });
@@ -87,15 +87,15 @@ impl Window {
     fn clear(&mut self) {
         let mut state = self.state.lock().unwrap();
         state.clear();
-        Self::clear_and_write_all(&state);
+        Self::flush_screen(&state);
     }
 
     fn refresh(&mut self) {
         let state = self.state.lock().unwrap();
-        Self::clear_and_write_all(&state)
+        Self::flush_screen(&state)
     }
 
-    fn clear_and_write_all(state: &State) {
+    fn flush_screen(state: &State) {
         state.clear_screen();
 
         for message in state.iter() {
