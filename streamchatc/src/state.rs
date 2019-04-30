@@ -13,6 +13,7 @@ pub struct State {
     size: Size,
     config: Config,
     view: Queue<Message>,
+    term: crossterm::Terminal,
 }
 
 impl State {
@@ -23,8 +24,9 @@ impl State {
         let (f, c) = (&config.right_fringe.fringe, &config.right_fringe.color);
         let right = Fringe::new(f, c);
 
+        let term = crossterm::terminal();
         let size = {
-            let (w, h) = crossterm::terminal().terminal_size();
+            let (w, h) = term.terminal_size();
             Size {
                 lines: h as _,
                 columns: w as _,
@@ -40,6 +42,7 @@ impl State {
             size,
             view: Queue::new(config.buffer_max),
             config,
+            term,
         }
     }
 
@@ -77,5 +80,9 @@ impl State {
 
     pub fn pad(&self) -> &str {
         &self.pad
+    }
+
+    pub fn clear_screen(&self) {
+        self.term.clear(crossterm::ClearType::All).unwrap();
     }
 }

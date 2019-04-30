@@ -96,10 +96,7 @@ impl Window {
     }
 
     fn clear_and_write_all(state: &State) {
-        // TODO reuse this
-        crossterm::terminal()
-            .clear(crossterm::ClearType::All)
-            .expect("clear");
+        state.clear_screen();
 
         for message in state.iter() {
             Self::write_message(&message, &state)
