@@ -97,7 +97,6 @@ impl Window {
 
     fn flush_screen(state: &State) {
         state.clear_screen();
-
         for message in state.iter() {
             Self::write_message(&message, &state)
         }

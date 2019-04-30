@@ -11,7 +11,6 @@ use self::error::Error;
 mod window;
 use self::window::Window;
 
-
 mod config;
 use self::config::Config;
 
@@ -22,7 +21,6 @@ mod state;
 use self::state::{Size, State};
 
 mod client;
-
 
 fn main() {
     let config = Args::load_or_config();
