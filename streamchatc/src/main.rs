@@ -236,38 +236,41 @@ impl Window {
         }
     }
 
-    pub fn run(mut self, rx: mpsc::Receiver<Message>) {
-        {
-            let state = Arc::clone(&self.state);
-            std::thread::spawn(move || {
-                for msg in rx {
-                    let mut state = state.lock().unwrap();
-                    Self::write_message(&msg, &state);
-                    state.view.push(msg);
-                }
-            });
+    fn start_read_loop(state: Arc<Mutex<State>>, rx: mpsc::Receiver<Message>) {
+        std::thread::spawn(move || {
+            for msg in rx {
+                let mut state = state.lock().unwrap();
+                Self::write_message(&msg, &state);
+                state.view.push(msg);
+            }
+        });
+    }
 
-            let state = Arc::clone(&self.state);
-            std::thread::spawn(move || {
-                let term = crossterm::terminal();
-                let mut size = term.terminal_size();
-                for (w, h) in std::iter::repeat_with(|| {
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    term.terminal_size()
-                }) {
-                    // don't lock the mutex unless a change has happened
-                    if w != size.0 || h != size.1 {
-                        size = (w, h);
-                        let mut state = state.lock().unwrap();
-                        state.update_size(Size {
-                            lines: h as _,
-                            columns: w as _,
-                        });
-                        Self::clear_and_write_all(&state);
-                    }
+    fn start_resize_loop(state: Arc<Mutex<State>>) {
+        std::thread::spawn(move || {
+            let term = crossterm::terminal();
+            let mut size = term.terminal_size();
+            for (w, h) in std::iter::repeat_with(|| {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                term.terminal_size()
+            }) {
+                // don't lock the mutex unless a change has happened
+                if w != size.0 || h != size.1 {
+                    size = (w, h);
+                    let mut state = state.lock().unwrap();
+                    state.update_size(Size {
+                        lines: h as _,
+                        columns: w as _,
+                    });
+                    Self::clear_and_write_all(&state);
                 }
-            });
-        }
+            }
+        });
+    }
+
+    pub fn run(mut self, rx: mpsc::Receiver<Message>) {
+        Self::start_read_loop(Arc::clone(&self.state), rx);
+        Self::start_resize_loop(Arc::clone(&self.state));
 
         let mut reader = crossterm::input().read_sync();
         loop {
