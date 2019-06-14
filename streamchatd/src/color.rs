@@ -8,12 +8,12 @@ pub trait RelativeColor {
 impl RelativeColor for RGB {
     fn is_dark(self) -> bool {
         let HSL(.., l) = self.into();
-        l < 30.0 // random number
+        l < 30.0 // arbitrary
     }
 
     fn is_light(self) -> bool {
         let HSL(.., l) = self.into();
-        l < 80.0 // random number
+        l < 80.0 // arbitrary
     }
 }
 

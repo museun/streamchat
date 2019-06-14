@@ -15,7 +15,7 @@ pub struct State {
 
     config: Config,
 
-    buf: Queue<Message>,
+    buf: streamchat::Queue<streamchat::Message>,
     term: crossterm::Terminal,
 }
 
@@ -43,13 +43,13 @@ impl State {
             right,
             pad,
             size,
-            buf: Queue::new(config.buffer_max),
+            buf: streamchat::Queue::new(config.buffer_max),
             config,
             term,
         }
     }
 
-    pub fn push(&mut self, msg: Message) {
+    pub fn push(&mut self, msg: streamchat::Message) {
         self.buf.push(msg);
     }
 
@@ -57,7 +57,7 @@ impl State {
         self.buf.clear();
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &Message> {
+    pub fn iter(&self) -> impl Iterator<Item = &streamchat::Message> {
         self.buf.iter()
     }
 

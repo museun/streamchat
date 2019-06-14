@@ -51,4 +51,3 @@ impl<T: Debug> Queue<T> {
         self.data.iter()
     }
 }
-

@@ -3,7 +3,6 @@ use std::net::{Shutdown, TcpListener, TcpStream};
 use std::thread;
 
 use crossbeam_channel as channel;
-use log::{debug, info, trace, warn};
 use streamchat::{Message, Queue, Transport};
 
 #[derive(Debug)]
@@ -16,7 +15,7 @@ pub struct Socket {
 impl Socket {
     pub fn start(addr: &str, max: usize) -> Self {
         let (tx, rx) = channel::bounded(max);
-        trace!("starting run loop, max of {} on {}", max, addr);
+        log::trace!("starting run loop, max of {} on {}", max, addr);
         Self::run_loop(rx.clone(), addr, max);
         Self { tx, rx, max }
     }
@@ -33,7 +32,7 @@ impl Socket {
             .set_nonblocking(true)
             .expect("nonblocking mode must be set");
 
-        debug!(
+        log::debug!(
             "socket transport listening on: {}",
             listener.local_addr().expect("get listeners local address")
         );
@@ -42,7 +41,7 @@ impl Socket {
             let mut queue = Queue::new(size);
             let (mut clients, mut alive) = (vec![], vec![]);
 
-            debug!("starting run loop");
+            log::debug!("starting run loop");
             loop {
                 'accept: loop {
                     match listener.accept() {
@@ -52,12 +51,12 @@ impl Socket {
                                 last: 0,
                                 stream,
                             };
-                            info!("accepted client from: {}", addr);
+                            log::info!("accepted client from: {}", addr);
                             clients.push(client);
                             break 'accept;
                         }
                         Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {}
-                        Err(err) => warn!("error accepting client: {}", err),
+                        Err(err) => log::warn!("error accepting client: {}", err),
                     }
 
                     if let Ok(msg) = rx.try_recv() {
@@ -80,7 +79,7 @@ impl Socket {
                     macro_rules! try_client {
                         ($f:expr) => {
                             if let Err(_err) = $f() {
-                                debug!("client appears to be disconnected: {}", client.id);
+                                log::debug!("client appears to be disconnected: {}", client.id);
                                 let _ = client.stream.shutdown(Shutdown::Both);
                                 continue 'drain;
                             }
@@ -103,7 +102,7 @@ impl Socket {
                     alive.push(client)
                 }
 
-                trace!("new client list count: {}", alive.len());
+                log::trace!("new client list count: {}", alive.len());
                 std::mem::swap(&mut clients, &mut alive);
                 clients.shrink_to_fit();
             }
@@ -116,7 +115,7 @@ impl Transport for Socket {
         use std::io::{Error, ErrorKind};
 
         if self.rx.is_full() {
-            trace!("buffer full, dropping one");
+            log::trace!("buffer full, dropping one");
             self.rx
                 .recv()
                 .map_err(|e| Box::new(Error::new(ErrorKind::NotConnected, e)))

@@ -6,9 +6,9 @@ use crossterm::{
     MouseButton::*,
     MouseEvent::*,
 };
-use std::net::TcpStream;
 use std::io::{BufRead, BufReader};
-use std::sync::{ Arc, Mutex};
+use std::net::TcpStream;
+use std::sync::{Arc, Mutex};
 use streamchat::Message;
 
 pub struct Window {
@@ -47,7 +47,6 @@ impl Window {
 
     fn start_read_loop(state: Arc<Mutex<State>>) {
         std::thread::spawn(move || {
-
             let addr = state.lock().unwrap().config().address.clone();
             let conn = TcpStream::connect(&addr).unwrap_or_else(|_| {
                 eprintln!("cannot connect to: {}", &addr);
@@ -60,7 +59,6 @@ impl Window {
                 let mut state = state.lock().unwrap();
                 Self::write_message(&msg, &state);
                 state.push(msg);
-
             }
         });
     }
