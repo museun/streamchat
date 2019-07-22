@@ -5,8 +5,8 @@ authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-twitchchat = "0.6.3"
+twitchchat = "0.6.4"
 
 [dependencies.serde]
-version = "1.0.92"
+version = "1.0.97"
 features = ["derive"]

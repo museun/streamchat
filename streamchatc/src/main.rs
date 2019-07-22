@@ -1,26 +1,26 @@
-use crossterm::AlternateScreen;
-use std::env;
-
 mod layout;
-use layout::{Fringe, MessageCell, Nick};
+use layout::Fringe;
 
 mod window;
-use self::window::Window;
+use window::Window;
 
 mod config;
-use self::config::Config;
+use config::Config;
 
 mod args;
-use self::args::Args;
+use args::Args;
 
-mod state;
-use self::state::{Size, State};
+use yansi::{Color, Paint};
 
 fn main() {
-    let config = Args::load_or_config();
-    let color = env::var("NO_COLOR").is_err();
+    let mut config = Args::load_or_config();
+    let color = std::env::var("NO_COLOR").is_err();
 
-    if let Ok(_screen) = AlternateScreen::to_alternate(false) {
-        Window::new(config, color).run();
+    if cfg!(windows) && !Paint::enable_windows_ascii() || !color {
+        Paint::disable();
     }
+
+    config.address = "localhost:51002".into();
+
+    Window::run(config);
 }
