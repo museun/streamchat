@@ -62,15 +62,28 @@ nick | the nick to authenticate with. overridden by the `n` flag
 ---
 ## streamchatc
 ```
-usage: streamchatc
-    -l <string>
-    -r <string>
+Optional arguments:
+  -h, --help                show this help message
+  -l, --left STRING         left fringe to use
+  --left-color #RRGGBB      left fringe color
+  -r, --right STRING        right fringe to use
+  --right-color #RRGGBB     right fringe color
+  -a, --address ADDR        address of the streamchatd instance
+  -n, --buffer-max NUMBER   maximum number of messages to buffer
+  -m, --nick-max NUMBER     maximum width of nicknames
+  --print-config            print the configuration path
+  --config BOOL             use the config file (default: true)
+  --standalone              run the client without the server
+  --nick TWITCH_NAME        your twitch name
+  --channel TWITCH_CHANNEL  the channel to join
 ```
-| flag | description |
---- | ---
--l | string that appears in the left most column
--r | string that appears in the right most column
----
+
+### standalone mode
+* if you use `--standalone` you don't need a `streamchatd` instance running, but a backlog won't be preserved.
+* if you use `--config false` then it'll require you to have `--nick`, `--channel` and `--address` 
+* if you use `--standalone` and `--config false` then you'll be required to have `--nick`, `--channel` and an ENV variable of `STREAMCHAT_TWITCH_OAUTH_TOKEN` set to your Twitch OAUTH token
+
+
 the configuration file is `streamchatc.toml`
 os | location
 --- | ---
