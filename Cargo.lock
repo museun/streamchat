@@ -375,7 +375,7 @@ dependencies = [
 
 [[package]]
 name = "streamchatc"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "configurable 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "console 0.7.7 (registry+https://github.com/rust-lang/crates.io-index)",
