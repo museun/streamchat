@@ -1,10 +1,10 @@
-use twitchchat::RGB;
+use streamchat::twitch;
 use unicode_width::UnicodeWidthStr as _;
 
 #[derive(Debug, Clone)]
 pub struct Fringe<'a> {
     data: &'a str,
-    color: RGB,
+    color: twitch::RGB,
     width: usize,
 }
 
@@ -22,7 +22,7 @@ impl<'a> Fringe<'a> {
         self.width
     }
 
-    pub fn color(&self) -> RGB {
+    pub fn color(&self) -> twitch::RGB {
         self.color
     }
 

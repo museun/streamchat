@@ -1,5 +1,7 @@
 use super::*;
 
+use streamchat::twitch;
+
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::sync::mpsc::{channel, Sender};
@@ -16,7 +18,7 @@ enum Event {
 
 struct Nick {
     nick: String,
-    color: twitchchat::Color,
+    color: twitch::Color,
 }
 
 struct DisplayMessage {
@@ -205,7 +207,7 @@ impl<'a> Columns<'a> {
 
     fn draw(&self, msg: &DisplayMessage, writer: &mut impl Write) {
         let Nick { nick, color } = &msg.nick;
-        let twitchchat::RGB(r, g, b) = color.clone().into();
+        let twitch::RGB(r, g, b) = color.clone().into();
 
         let line_width =
             self.max_size - self.nick_size - self.left_fringe.width() - self.right_fringe.width();
@@ -230,7 +232,7 @@ impl<'a> Columns<'a> {
                     writer,
                     "{: >space$} ",
                     Paint::new(self.left_fringe.display()).fg({
-                        let twitchchat::RGB(r, g, b) = self.left_fringe.color();
+                        let twitch::RGB(r, g, b) = self.left_fringe.color();
                         Color::RGB(r, g, b)
                     }),
                     space = self.nick_size
@@ -244,7 +246,7 @@ impl<'a> Columns<'a> {
                     writer,
                     " {: >pad$}",
                     Paint::new(self.right_fringe.display()).fg({
-                        let twitchchat::RGB(r, g, b) = self.right_fringe.color();
+                        let twitch::RGB(r, g, b) = self.right_fringe.color();
                         Color::RGB(r, g, b)
                     }),
                     pad = (line_width - line.width()) + self.right_fringe.width()
@@ -256,6 +258,7 @@ impl<'a> Columns<'a> {
     }
 }
 
+// TODO this breaks on utf-8 names
 use std::borrow::Cow;
 fn truncate(data: &str, limit: usize) -> Cow<'_, str> {
     if data.len() > limit {

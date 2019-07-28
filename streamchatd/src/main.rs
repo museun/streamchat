@@ -3,10 +3,13 @@ use std::net::TcpStream;
 
 use configurable::Configurable;
 
-use twitchchat::{commands::PrivMsg, Error as TwitchError, Message as TwitchMsg};
-use twitchchat::{Client, ReadAdapter, UserConfig, RGB};
-
-use streamchat::{Message, Transport, Version};
+use streamchat::{
+    twitch::{
+        self, commands::PrivMsg, Client, Error as TwitchError, Message as TwitchMsg, ReadAdapter,
+        UserConfig, RGB,
+    },
+    Message, Transport, Version,
+};
 
 mod error;
 use error::Error;
@@ -15,7 +18,7 @@ mod colorconfig;
 use colorconfig::ColorConfig;
 
 mod color;
-use color::RelativeColor;
+use color::RelativeColor as _;
 
 mod service;
 use service::Service;
@@ -40,7 +43,7 @@ fn handle_color(id: u64, args: &str) -> Option<String> {
     let mut colors = ColorConfig::load();
     match args.split_terminator(' ').next() {
         Some(color) => {
-            let color: twitchchat::Color = color.parse().unwrap_or_default();
+            let color: twitch::Color = color.parse().unwrap_or_default();
             let rgb = RGB::from(color);
             if rgb.is_dark() {
                 let msg = format!("color {} is too dark", rgb);
@@ -80,24 +83,25 @@ fn main() {
     };
 
     let color = env::var("NO_COLOR").is_err();
-    env_logger::Builder::from_default_env()
-        .default_format_timestamp(false)
-        .write_style(if !color {
-            env_logger::WriteStyle::Never
-        } else {
-            env_logger::WriteStyle::Auto
-        })
-        .init();
+    // TODO logger
+    // env_logger::Builder::from_default_env()
+    //     .default_format_timestamp(false)
+    //     .write_style(if !color {
+    //         env_logger::WriteStyle::Never
+    //     } else {
+    //         env_logger::WriteStyle::Auto
+    //     })
+    //     .init();
 
-    log::info!("connecting to: {}", twitchchat::TWITCH_IRC_ADDRESS);
+    log::info!("connecting to: {}", twitch::TWITCH_IRC_ADDRESS);
     let (read, write) = {
-        let read = TcpStream::connect(twitchchat::TWITCH_IRC_ADDRESS).expect("connect to twitch");
+        let read = TcpStream::connect(twitch::TWITCH_IRC_ADDRESS).expect("connect to twitch");
         let write = read.try_clone().expect("clone tcpstream");
         (read, write)
     };
     log::info!("opened connection");
 
-    let (read, write) = twitchchat::sync_adapters(read, write);
+    let (read, write) = twitch::sync_adapters(read, write);
 
     let mut client = Client::new(read, write);
     let conf = UserConfig::builder()

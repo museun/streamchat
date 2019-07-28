@@ -30,6 +30,9 @@ pub struct Args {
 
     #[options(help = "print the configuration path", no_short)]
     pub config: bool,
+
+    #[options(help = "run the client without the server", no_short)]
+    pub standalone: bool,
 }
 
 impl Args {

@@ -5,8 +5,5 @@ authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-twitchchat = "0.6.4"
-
-[dependencies.serde]
-version = "1.0.97"
-features = ["derive"]
+twitchchat = "0.6.6"
+serde = { version = "1.0.98", features = ["derive"] }

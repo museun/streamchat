@@ -1,7 +1,7 @@
 use configurable::{Configurable, Data};
-use hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
-use twitchchat::RGB;
+use std::collections::HashMap;
+use streamchat::twitch::RGB;
 
 use crate::Error;
 

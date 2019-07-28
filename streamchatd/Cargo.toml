@@ -6,21 +6,13 @@ edition = "2018"
 
 [dependencies]
 streamchat = { path = "../streamchat" }
+
 log = "0.4.7"
-env_logger = "0.6.2"
-twitchchat = "0.6.4"
+flexi_logger = "0.14.0"
+
 parking_lot = "0.9.0"
-crossbeam-channel = "0.3.8"
+crossbeam-channel = "0.3.9"
+
+configurable = "0.3.4"
+serde = { version = "1.0.98", features = ["derive"] }
 serde_json = "1.0.40"
-
-[dependencies.hashbrown]
-version = "0.5.0"
-features = ["serde"]
-
-[dependencies.serde]
-version = "1.0.97"
-features = ["derive"]
-
-[dependencies.configurable]
-git = "https://github.com/museun/configurable"
-version = "0.3"

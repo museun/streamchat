@@ -1,4 +1,4 @@
-use hashbrown::HashMap;
+use std::collections::HashMap;
 
 pub(crate) enum Response {
     Message(String),

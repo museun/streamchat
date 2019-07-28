@@ -1,5 +1,4 @@
-use twitchchat::{Badge, Color, Emotes, Tags};
-
+use crate::twitch::{Badge, Color, Emotes, Tags};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

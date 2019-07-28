@@ -1,4 +1,4 @@
-use twitchchat::RGB;
+use streamchat::twitch::RGB;
 
 pub trait RelativeColor {
     fn is_dark(self) -> bool;
