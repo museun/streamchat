@@ -1,19 +1,80 @@
 use super::*;
-
+use crate::layout::Fringe;
 use streamchat::twitch;
 
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpStream;
-use std::sync::mpsc::{channel, Sender};
+use std::borrow::Cow;
 
+use crossbeam_channel as channel;
+use maybe_list::MaybeList;
 use unicode_segmentation::UnicodeSegmentation as _;
 use unicode_width::UnicodeWidthStr as _;
 
-use maybe_list::MaybeList;
+pub struct Window;
 
-enum Event {
-    Message(DisplayMessage),
-    Resize { width: usize },
+impl Window {
+    pub fn run(config: Config, messages: channel::Receiver<streamchat::Message>) {
+        use std::time::Duration;
+
+        let term = console::Term::stdout();
+        let mut columns = Columns::new(
+            config.nick_max,
+            term.size().1 as _,
+            (&config.left_fringe).into(),
+            (&config.right_fringe).into(),
+        );
+
+        let term = console::Term::stdout();
+        let mut size = Size::default();
+
+        let mut queue = streamchat::Queue::new(config.buffer_max);
+        const TIMEOUT: Duration = Duration::from_millis(100);
+
+        loop {
+            channel::select! {
+                recv(messages) -> msg => {
+                    let msg = match msg { Ok(msg) => msg.into(), Err(..) => break };
+                    columns.draw(&msg, &mut std::io::stdout());
+                    queue.push(msg);
+                },
+                default(TIMEOUT) => {
+                    if size.update(&term) {
+                        columns = Columns::new(
+                            config.nick_max,
+                            size.width as _,
+                            (&config.left_fringe).into(),
+                            (&config.right_fringe).into(),
+                        );
+
+                        let mut stdout = std::io::stdout();
+                        for msg in queue.iter() {
+                            columns.draw(&msg, &mut stdout);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Default, PartialEq)]
+struct Size {
+    width: u16,
+    height: u16,
+}
+impl Size {
+    fn update(&mut self, term: &console::Term) -> bool {
+        let (h, w) = term.size();
+        let sz = Size {
+            width: w,
+            height: h,
+        };
+        if *self != sz {
+            std::mem::replace(self, sz);
+            true
+        } else {
+            false
+        }
+    }
 }
 
 struct Nick {
@@ -97,90 +158,6 @@ fn partition(input: &str, max: usize) -> MaybeList<String> {
     MaybeList::many(vec)
 }
 
-pub struct Window;
-
-impl Window {
-    pub fn run(config: Config) {
-        let (tx, rx) = channel();
-
-        let conn = TcpStream::connect(&config.address).unwrap_or_else(|err| {
-            eprintln!("cannot connect to streamchatd @ {}", &config.address);
-            eprintln!("please ensure its running. error: {}", err);
-            std::process::exit(1);
-        });
-
-        Self::start_read_loop(tx.clone(), conn);
-        Self::start_resize_loop(tx.clone());
-
-        let term = console::Term::stdout();
-        let mut columns = Columns::new(
-            config.nick_max,
-            term.size().1 as _,
-            layout::Fringe::new(&config.left_fringe.fringe, &config.left_fringe.color),
-            layout::Fringe::new(&config.right_fringe.fringe, &config.right_fringe.color),
-        );
-
-        let mut queue = streamchat::Queue::new(128);
-        for msg in rx {
-            match msg {
-                Event::Message(msg) => {
-                    columns.draw(&msg, &mut std::io::stdout());
-                    queue.push(msg);
-                }
-                Event::Resize { width, .. } => {
-                    columns = Columns::new(
-                        config.nick_max,
-                        width,
-                        layout::Fringe::new(&config.left_fringe.fringe, &config.left_fringe.color),
-                        layout::Fringe::new(
-                            &config.right_fringe.fringe,
-                            &config.right_fringe.color,
-                        ),
-                    );
-
-                    let mut stdout = std::io::stdout();
-                    for msg in queue.iter() {
-                        columns.draw(&msg, &mut stdout);
-                    }
-                }
-            }
-        }
-    }
-
-    fn start_read_loop(sender: Sender<Event>, conn: TcpStream) {
-        std::thread::spawn(move || {
-            let mut lines = BufReader::new(conn).lines();
-            while let Some(Ok(line)) = lines.next() {
-                let msg: streamchat::Message = serde_json::from_str(&line).expect("valid json");
-                if sender.send(Event::Message(msg.into())).is_err() {
-                    break;
-                }
-            }
-        });
-    }
-
-    fn start_resize_loop(sender: Sender<Event>) {
-        std::thread::spawn(move || {
-            let term = console::Term::stdout();
-            let (mut h, mut w) = term.size();
-
-            for (nh, nw) in std::iter::repeat_with(|| {
-                std::thread::sleep(std::time::Duration::from_millis(10));
-                term.size()
-            }) {
-                if nh == h && nw == w {
-                    continue;
-                }
-                w = nw;
-                h = nh;
-                if sender.send(Event::Resize { width: w as _ }).is_err() {
-                    break;
-                }
-            }
-        });
-    }
-}
-
 struct Columns<'a> {
     max_size: usize,
     nick_size: usize,
@@ -205,7 +182,7 @@ impl<'a> Columns<'a> {
         }
     }
 
-    fn draw(&self, msg: &DisplayMessage, writer: &mut impl Write) {
+    fn draw(&self, msg: &DisplayMessage, writer: &mut impl std::io::Write) {
         let Nick { nick, color } = &msg.nick;
         let twitch::RGB(r, g, b) = color.clone().into();
 
@@ -258,14 +235,12 @@ impl<'a> Columns<'a> {
     }
 }
 
-// TODO this breaks on utf-8 names
-use std::borrow::Cow;
-fn truncate(data: &str, limit: usize) -> Cow<'_, str> {
-    if data.len() > limit {
-        let mut s = data[..limit - 1].to_string();
-        s.push('…');
-        s.into()
+pub fn truncate(input: &str, max: usize) -> Cow<'_, str> {
+    if input.width() > max {
+        let mut input = input.graphemes(true).take(max - 1).collect::<String>();
+        input.push('…');
+        input.into()
     } else {
-        data.into()
+        input.into()
     }
 }

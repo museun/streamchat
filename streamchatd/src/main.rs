@@ -83,15 +83,9 @@ fn main() {
     };
 
     let color = env::var("NO_COLOR").is_err();
-    // TODO logger
-    // env_logger::Builder::from_default_env()
-    //     .default_format_timestamp(false)
-    //     .write_style(if !color {
-    //         env_logger::WriteStyle::Never
-    //     } else {
-    //         env_logger::WriteStyle::Auto
-    //     })
-    //     .init();
+    flexi_logger::Logger::with_env_or_str("twitchchat=trace,streamchat=trace,streamchatc=trace")
+        .start()
+        .unwrap();
 
     log::info!("connecting to: {}", twitch::TWITCH_IRC_ADDRESS);
     let (read, write) = {

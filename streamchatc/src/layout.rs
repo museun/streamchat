@@ -8,16 +8,17 @@ pub struct Fringe<'a> {
     width: usize,
 }
 
-impl<'a> Fringe<'a> {
-    pub fn new(data: &'a str, color: &str) -> Self {
-        let width = data.width();
+impl<'a> From<&'a crate::args::Fringe> for Fringe<'a> {
+    fn from(fringe: &'a crate::args::Fringe) -> Self {
         Self {
-            data,
-            color: color.parse().unwrap_or_default(),
-            width,
+            data: &fringe.fringe,
+            color: fringe.color.parse().unwrap_or_default(),
+            width: fringe.fringe.width(),
         }
     }
+}
 
+impl<'a> Fringe<'a> {
     pub fn width(&self) -> usize {
         self.width
     }
